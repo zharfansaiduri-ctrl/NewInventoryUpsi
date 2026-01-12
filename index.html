@@ -54,7 +54,7 @@ button:hover { background:#084298; }
 
     <input id="jabatan" placeholder="Jabatan" required>
 
-    <select id="jenis">
+    <select id="jenis" required>
       <option value="">-- Pilih Aset --</option>
       <option value="alat_tulis">Alat Tulis</option>
       <option value="kenderaan">Kenderaan</option>
@@ -83,7 +83,6 @@ const RESPONSE_API = {
   kertas_a4: "https://script.google.com/macros/s/AKfycby3A910IAwBskOo6joxToCmrvPSc0lKj7Ea6jS_hDYhJ2twDmzPG8Q26fT423jXAYDa/exec"
 };
 
-
 /* ================== ELEMENT ================== */
 const nama = document.getElementById("nama");
 const jabatan = document.getElementById("jabatan");
@@ -98,85 +97,43 @@ const suggestions = document.getElementById("suggestions");
 /* ================== AUTOCOMPLETE ================== */
 nama.addEventListener("input", async () => {
   const q = nama.value.trim();
+  if (q.length < 2) return suggestions.classList.add("hidden");
 
-  if (q.length < 2) {
-    suggestions.classList.add("hidden");
-    return;
-  }
+  const res = await fetch(`${GET_API}?search=${encodeURIComponent(q)}`);
+  const data = await res.json();
 
-  try {
-    const res = await fetch(`${GET_API}?search=${encodeURIComponent(q)}`);
-    const data = await res.json();
+  if (!data.length) return suggestions.classList.add("hidden");
 
-    if (!data.length) {
+  suggestions.innerHTML = "";
+  data.forEach(r => {
+    const d = document.createElement("div");
+    d.innerText = r.Nama;
+    d.style.padding = "6px";
+    d.onclick = () => {
+      nama.value = r.Nama;
+      jabatan.value = r.Dept;
       suggestions.classList.add("hidden");
-      return;
-    }
-
-    suggestions.innerHTML = "";
-    data.forEach(row => {
-      const div = document.createElement("div");
-      div.style.padding = "6px";
-      div.style.cursor = "pointer";
-      div.innerText = row.Nama;
-
-      div.onclick = () => {
-        nama.value = row.Nama;
-        jabatan.value = row.Dept;
-        suggestions.classList.add("hidden");
-      };
-
-      suggestions.appendChild(div);
-    });
-
-    suggestions.classList.remove("hidden");
-  } catch (err) {
-    console.error(err);
-  }
+    };
+    suggestions.appendChild(d);
+  });
+  suggestions.classList.remove("hidden");
 });
 
 /* ================== FIELD CONTROL ================== */
 function updateField(type) {
-  item.classList.add("hidden");
-  tempoh.classList.add("hidden");
-  kuantiti.classList.add("hidden");
-  item.type = "text";
+  [item,tempoh,kuantiti].forEach(i=>i.classList.add("hidden"));
+  item.type="text";
 
-  if (type === "alat_tulis") {
-    item.placeholder = "Jenis Alat";
-    item.classList.remove("hidden");
-    kuantiti.classList.remove("hidden");
-  }
-
-  if (type === "kenderaan") {
-    item.placeholder = "Jenis Kenderaan";
-    item.classList.remove("hidden");
-    tempoh.classList.remove("hidden");
-  }
-
-  if (type === "projektor") {
-    item.placeholder = "Bilangan Projektor";
-    item.type = "number";
-    item.classList.remove("hidden");
-    tempoh.classList.remove("hidden");
-  }
-
-  if (type === "kertas_a4") {
-    kuantiti.classList.remove("hidden");
-  }
+  if(type==="alat_tulis"){item.placeholder="Jenis Alat";item.classList.remove("hidden");kuantiti.classList.remove("hidden");}
+  if(type==="kenderaan"){item.placeholder="Jenis Kenderaan";item.classList.remove("hidden");tempoh.classList.remove("hidden");}
+  if(type==="projektor"){item.type="number";item.classList.remove("hidden");tempoh.classList.remove("hidden");}
+  if(type==="kertas_a4"){kuantiti.classList.remove("hidden");}
 }
-
-jenis.addEventListener("change", () => updateField(jenis.value));
+jenis.addEventListener("change",()=>updateField(jenis.value));
 
 /* ================== SUBMIT ================== */
 form.addEventListener("submit", async e => {
   e.preventDefault();
-
-  const type = jenis.value;
-  if (!type) {
-    msg.innerText = "Sila pilih jenis aset";
-    return;
-  }
 
   const timestand = new Date().toLocaleString("ms-MY");
 
@@ -185,47 +142,26 @@ form.addEventListener("submit", async e => {
     Jabatan: jabatan.value,
     JenisAlatan: "",
     Kuantiti: "",
-    Timestand: timestand
+    Timestamp: timestand   // ✅ BETUL
   };
 
-  if (type === "alat_tulis") {
-    payload.JenisAlatan = item.value;
-    payload.Kuantiti = kuantiti.value;
-  }
+  if (jenis.value==="alat_tulis"){payload.JenisAlatan=item.value;payload.Kuantiti=kuantiti.value;}
+  if (jenis.value==="kenderaan"){payload.JenisAlatan=item.value+" ("+tempoh.value+")";payload.Kuantiti="-";}
+  if (jenis.value==="projektor"){payload.JenisAlatan="Projektor ("+tempoh.value+")";payload.Kuantiti=item.value;}
+  if (jenis.value==="kertas_a4"){payload.JenisAlatan="Kertas A4";payload.Kuantiti=kuantiti.value;}
 
-  if (type === "kenderaan") {
-    payload.JenisAlatan = item.value + " (" + tempoh.value + ")";
-    payload.Kuantiti = "-";
-  }
+  console.log("POST JSON:", payload); // 🔍 DEBUG
 
-  if (type === "projektor") {
-    payload.JenisAlatan = "Projektor (" + tempoh.value + ")";
-    payload.Kuantiti = item.value;
-  }
+  const res = await fetch(RESPONSE_API[jenis.value],{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(payload)
+  });
 
-  if (type === "kertas_a4") {
-    payload.JenisAlatan = "Kertas A4";
-    payload.Kuantiti = kuantiti.value;
-  }
-
-  try {
-    const res = await fetch(RESPONSE_API[type], {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const json = await res.json().catch(()=>({message:"Berjaya direkodkan"}));
-    msg.innerText = json.message || "Berjaya direkodkan";
-    form.reset();
-    suggestions.classList.add("hidden");
-  } catch (err) {
-    console.error(err);
-    msg.innerText = "Gagal hantar data";
-  }
+  const json = await res.json();
+  msg.innerText = json.message || "Berjaya";
+  form.reset();
 });
 </script>
 </body>
 </html>
-
-
