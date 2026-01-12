@@ -29,18 +29,20 @@ button {
   border:none;
 }
 button:hover { background:#084298; }
+.hidden { display:none; }
 </style>
 </head>
 
 <body>
 <div class="box">
-  <h2 id="tajuk">Permohonan</h2>
+  <h2 id="tajuk">Permohonan Aset</h2>
 
   <form id="form">
     <input id="nama" placeholder="Nama" required>
     <input id="jabatan" placeholder="Jabatan" required>
 
     <select id="jenis">
+      <option value="">-- Pilih Aset --</option>
       <option value="alat_tulis">Alat Tulis</option>
       <option value="kenderaan">Kenderaan</option>
       <option value="projektor">Projektor</option>
@@ -58,20 +60,62 @@ button:hover { background:#084298; }
 </div>
 
 <script>
-/* ================== URL API (WAJIB ISI) ================== */
+/* ================== URL API ================== */
 const SESSION_API = "https://script.google.com/macros/s/AKfycbwMf6GSN9kHfhmqNvanLF2TAEpHDPhfBS-g-KxStfVpRehLm7Znwdg6G_SyC8GCRGtooA/exec";
 
 const RESPONSE_API = {
-  alat_tulis:   "https://script.google.com/macros/s/AKfycbwdXh0iQ0ENMfqUEhXGcgaU41JCIBQ9IU0V3g9DjDshfkwYMDl3T2t0P0oNpNzkddBAfw/exec",
-  kenderaan:   "https://script.google.com/macros/s/AKfycbwbhIgyxWobB9WRBLs_pQPcBUKAKcZResAe3mBQBVdLjtI0Ya-K6_z3zunjmMBWqov7jQ/exec",
-  projektor:   "https://script.google.com/macros/s/AKfycbxWjh1hHWkwNXF1SzuRCiTPodlA91LYN1L4lo1FDjhsWG7ykKtp-u4HVM5CbMfUoUN5Hw/exec",
-  kertas_a4:   "https://script.google.com/macros/s/AKfycbyb4htvO1FBTusXEQmbs-cxcoteFADld9aKb8gWCYuE0S-qJ0KsKm9MxR52yIxBto4a/exec"
+  alat_tulis: "https://script.google.com/macros/s/AKfycbwdXh0iQ0ENMfqUEhXGcgaU41JCIBQ9IU0V3g9DjDshfkwYMDl3T2t0P0oNpNzkddBAfw/exec",
+  kenderaan: "https://script.google.com/macros/s/AKfycbwbhIgyxWobB9WRBLs_pQPcBUKAKcZResAe3mBQBVdLjtI0Ya-K6_z3zunjmMBWqov7jQ/exec",
+  projektor: "https://script.google.com/macros/s/AKfycbxWjh1hHWkwNXF1SzuRCiTPodlA91LYN1L4lo1FDjhsWG7ykKtp-u4HVM5CbMfUoUN5Hw/exec",
+  kertas_a4: "https://script.google.com/macros/s/AKfycbyb4htvO1FBTusXEQmbs-cxcoteFADld9aKb8gWCYuE0S-qJ0KsKm9MxR52yIxBto4a/exec"
 };
 
-/* ================== LOAD QR SESSION ================== */
+/* ================== ELEMENT ================== */
+const jenis = document.getElementById("jenis");
+const item = document.getElementById("item");
+const tempoh = document.getElementById("tempoh");
+const kuantiti = document.getElementById("kuantiti");
+const form = document.getElementById("form");
+const msg = document.getElementById("msg");
+
+let SESSION_TYPE = null;
+
+/* ================== FIELD CONTROL ================== */
+function updateField(type) {
+  item.classList.add("hidden");
+  tempoh.classList.add("hidden");
+  kuantiti.classList.add("hidden");
+
+  if (type === "alat_tulis") {
+    item.placeholder = "Jenis Alat";
+    item.classList.remove("hidden");
+    kuantiti.classList.remove("hidden");
+  }
+
+  if (type === "kenderaan") {
+    item.placeholder = "Jenis Kenderaan";
+    item.classList.remove("hidden");
+    tempoh.classList.remove("hidden");
+  }
+
+  if (type === "projektor") {
+    item.placeholder = "Bilangan Projektor";
+    item.classList.remove("hidden");
+    tempoh.classList.remove("hidden");
+  }
+
+  if (type === "kertas_a4") {
+    kuantiti.classList.remove("hidden");
+  }
+}
+
+jenis.addEventListener("change", () => {
+  updateField(jenis.value);
+});
+
+/* ================== QR SESSION ================== */
 const params = new URLSearchParams(window.location.search);
 const url = params.get("url");
-let SESSION_TYPE = null;
 
 async function loadSession() {
   if (!url) return;
@@ -94,6 +138,7 @@ async function loadSession() {
 
   jenis.value = SESSION_TYPE;
   jenis.disabled = true;
+  updateField(SESSION_TYPE);
 }
 loadSession();
 
@@ -101,59 +146,44 @@ loadSession();
 form.addEventListener("submit", async e => {
   e.preventDefault();
 
-  const today = new Date().toLocaleDateString("ms-MY");
-  let payload = {};
-
   const type = SESSION_TYPE || jenis.value;
+  const today = new Date().toLocaleDateString("ms-MY");
+
+  let payload = {
+    Nama: nama.value,
+    Jabatan: jabatan.value,
+    Tarikh: today
+  };
 
   if (type === "alat_tulis") {
-    payload = {
-      Nama: nama.value,
-      Jabatan: jabatan.value,
-      Tarikh: today,
-      JenisAlat: item.value,
-      Kuantiti: kuantiti.value
-    };
+    payload.JenisAlat = item.value;
+    payload.Kuantiti = kuantiti.value;
   }
 
   if (type === "kenderaan") {
-    payload = {
-      Nama: nama.value,
-      Jabatan: jabatan.value,
-      Tarikh: today,
-      JenisKenderaan: item.value,
-      Tempoh: tempoh.value
-    };
+    payload.JenisKenderaan = item.value;
+    payload.Tempoh = tempoh.value;
   }
 
   if (type === "projektor") {
-    payload = {
-      Nama: nama.value,
-      Jabatan: jabatan.value,
-      Tarikh: today,
-      BilanganProjektor: item.value,
-      Tempoh: tempoh.value
-    };
+    payload.BilanganProjektor = item.value;
+    payload.Tempoh = tempoh.value;
   }
 
   if (type === "kertas_a4") {
-    payload = {
-      Nama: nama.value,
-      Jabatan: jabatan.value,
-      Tarikh: today,
-      Kuantiti: kuantiti.value
-    };
+    payload.Kuantiti = kuantiti.value;
   }
 
   const res = await fetch(RESPONSE_API[type], {
     method: "POST",
-    body: JSON.stringify(payload),
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
   });
 
   const json = await res.json();
   msg.innerText = json.message || "Berjaya direkodkan";
   form.reset();
+  if (!SESSION_TYPE) updateField("");
 });
 </script>
 </body>
