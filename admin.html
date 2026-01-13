@@ -98,24 +98,44 @@ tr:nth-child(even){background:#f9f9f9}
 </div>
 
 <script>
-  const BASE_URL = "https://zharfansaiduri-ctrl.github.io/InventoryUpsi/index.html"
-const RESPONSE_API = {
-  kenderaan: "https://script.google.com/macros/s/AKfycbwmQwI6rWVfJnNsGd8KwPmPvWsy-p7t0h3VwObC6JSRGyFWXaJuKGjxS7vAwCHaReXAng/exec?sheet=kenderaan",
-  alat_tulis: "https://script.google.com/macros/s/AKfycbwnp59kUh0dun_SGrx-IHWM4Cw2zbJNlPTmw39yU6ZpZD7AwuoQ2xbl0tg2_eecd0YE/exec?sheet=alat_tulis",
-  projektor: "https://script.google.com/macros/s/AKfycbzF_rGqoWIbVc2aSznSMrn--UGxco_glgnRR2yc8sWblTr-KKQtwpSqVMpXyE9sgGYc/exec/exec?sheet=projektor",
-  kertas_a4: "https://script.google.com/macros/s/AKfycbw5LLX58OlqDCKiSaiyv6WNcpWnw_zWZlAEzibfBr9YwBp98wlOWXRbbl_qrCZDoSzY/exec?sheet=kertas_a4"
-};
-
-
 // redirect kalau belum login
 if(sessionStorage.getItem('isLoggedIn') !== 'true'){
   window.location.href = 'adminlogin.html';
 }
 
+/**
+ * Mapping NAMA ADMIN -> NAMA SHEET SEBENAR
+ */
+const SHEET_MAP = {
+  kenderaan: 'kenderaan',
+  alat_tulis: 'Alat Tulis',
+  projektor: 'projektor',
+  kertas_a4: 'kertas_a4'
+};
+
+/**
+ * API ENDPOINT
+ */
+const RESPONSE_API = {
+  kenderaan: 'https://script.google.com/macros/s/AKfycbwmQwI6rWVfJnNsGd8KwPmPvWsy-p7t0h3VwObC6JSRGyFWXaJuKGjxS7vAwCHaReXAng/exec',
+  alat_tulis: 'https://script.google.com/macros/s/AKfycbwnp59kUh0dun_SGrx-IHWM4Cw2zbJNlPTmw39yU6ZpZD7AwuoQ2xbl0tg2_eecd0YE/exec',
+  projektor: 'https://script.google.com/macros/s/AKfycbzF_rGqoWIbVc2aSznSMrn--UGxco_glgnRR2yc8sWblTr-KKQtwpSqVMpXyE9sgGYc/exec',
+  kertas_a4: 'https://script.google.com/macros/s/AKfycbw5LLX58OlqDCKiSaiyv6WNcpWnw_zWZlAEzibfBr9YwBp98wlOWXRbbl_qrCZDoSzY/exec'
+};
+
 function loadSheet(type){
-  const apiUrl = RESPONSE_API[type];
+  const sheetName = SHEET_MAP[type];
+  const apiBase = RESPONSE_API[type];
+
+  if(!sheetName || !apiBase){
+    alert('Konfigurasi sheet tidak sah');
+    return;
+  }
+
+  const apiUrl = `${apiBase}?sheet=${encodeURIComponent(sheetName)}`;
+
   const container = document.getElementById('tableContainer');
-  container.innerHTML = `<div class="loading">Memuatkan data ${type}...</div>`;
+  container.innerHTML = `<div class="loading">Memuatkan data ${sheetName}...</div>`;
 
   fetch(apiUrl)
     .then(res=>{
@@ -128,14 +148,14 @@ function loadSheet(type){
         return;
       }
 
-      if(!Array.isArray(data) || data.length===0){
+      if(!Array.isArray(data) || data.length === 0){
         container.innerHTML = `<div class="loading">Tiada data ditemui.</div>`;
         return;
       }
 
       const headers = Object.keys(data[0]);
       let html = `<table><thead><tr>`;
-      headers.forEach(h=>html+=`<th>${h}</th>`);
+      headers.forEach(h=> html += `<th>${h}</th>`);
       html += `</tr></thead><tbody>`;
 
       data.forEach(row=>{
@@ -163,5 +183,3 @@ function logout(){
 
 </body>
 </html>
-
-
