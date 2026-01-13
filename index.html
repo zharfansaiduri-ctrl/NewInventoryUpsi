@@ -82,11 +82,10 @@ const GET_API = "https://script.google.com/macros/s/AKfycbxasoAjEyWdr57vkkotprtY
 
 const RESPONSE_API = {
   alat_tulis: "https://script.google.com/macros/s/AKfycbwUCpamgEwFaBO44A0j38ZrmEQieNgO3g7W4opAjXIjxZUloYz8YZwZSBOHIbvSzjucVQ/exec",
-  kenderaan: "https://script.google.com/macros/s/AKfycbyfjpPuXbWp1HCHDvPWmOszSb1qZlidi1caKzWSz3uRLsTVZSWq4tKYCgOVZYhuz-K5HA/exec",
+  kenderaan: "https://script.google.com/macros/s/AKfycbyfjpPuXbWp1HCHDvPWmOszSb1qZlidi1caXWSz3uRLsTVZSWq4tKYCgOVZYhuz-K5HA/exec",
   projektor: "https://script.google.com/macros/s/AKfycbwswyLJbV0hL9HZ1ODE4yWAzcloZ-P8NB6faXEV2qF6ycN3Elt1-qkKXjSND75F4OVt2w/exec",
   kertas_a4: "https://script.google.com/macros/s/AKfycbxNdDozlMB4Iz6ZEPN4_9wfoeFMdnA9r_hl2IOi-rpJLWfMf5LdNXQBIpb8_4EI2NeT/exec"
 };
-
 
 /* ================== ELEMENT ================== */
 const nama = document.getElementById("nama");
@@ -150,27 +149,28 @@ form.addEventListener("submit", async e => {
     msg.innerText = "Sila pilih jenis aset.";
     return;
   }
-  if((!item.value && item.classList.contains("hidden")===false) ||
-     (!tempoh.value && tempoh.classList.contains("hidden")===false) ||
-     (!kuantiti.value && kuantiti.classList.contains("hidden")===false)){
+  if((!item.value && !item.classList.contains("hidden")) ||
+     (!tempoh.value && !tempoh.classList.contains("hidden")) ||
+     (!kuantiti.value && !kuantiti.classList.contains("hidden"))){
     msg.innerText = "Sila lengkapkan semua maklumat yang diperlukan.";
     return;
   }
 
   const timestand = new Date().toLocaleString("ms-MY");
 
+  // ✅ Payload fix: gunakan key "Jenis Alatan" supaya Apps Script baca betul
   let payload = {
     Nama: nama.value,
     Jabatan: jabatan.value,
-    JenisAlatan: "",
+    "Jenis Alatan": "",
     Kuantiti: "",
     Timestamp: timestand
   };
 
-  if (jenis.value==="alat_tulis"){payload.JenisAlatan=item.value;payload.Kuantiti=kuantiti.value;}
-  if (jenis.value==="kenderaan"){payload.JenisAlatan=item.value+" ("+tempoh.value+")";payload.Kuantiti="-";}
-  if (jenis.value==="projektor"){payload.JenisAlatan="Projektor ("+tempoh.value+")";payload.Kuantiti=item.value;}
-  if (jenis.value==="kertas_a4"){payload.JenisAlatan="Kertas A4";payload.Kuantiti=kuantiti.value;}
+  if (jenis.value==="alat_tulis"){payload["Jenis Alatan"]=item.value;payload.Kuantiti=kuantiti.value;}
+  if (jenis.value==="kenderaan"){payload["Jenis Alatan"]=item.value+" ("+tempoh.value+")";payload.Kuantiti="-";}
+  if (jenis.value==="projektor"){payload["Jenis Alatan"]="Projektor ("+tempoh.value+")";payload.Kuantiti=item.value;}
+  if (jenis.value==="kertas_a4"){payload["Jenis Alatan"]="Kertas A4";payload.Kuantiti=kuantiti.value;}
 
   try {
     const res = await fetch(RESPONSE_API[jenis.value],{
@@ -180,11 +180,12 @@ form.addEventListener("submit", async e => {
     });
 
     const json = await res.json();
+    console.log("Response JSON:", json);
     msg.innerText = json.message || "Berjaya";
     form.reset();
     updateField(""); // reset field
   } catch (err) {
-    console.error(err);
+    console.error("Fetch error:", err);
     msg.innerText = "Gagal menghantar data.";
   }
 });
