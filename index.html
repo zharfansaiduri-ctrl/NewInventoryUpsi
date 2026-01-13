@@ -11,19 +11,20 @@
 body { font-family:'League Spartan',sans-serif; background:#f2f2f2; padding:20px; }
 .form-container { max-width:500px; margin:auto; background:white; padding:30px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
 .logo-container { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
-.logo-container img { height:40px; object-fit:contain; }
-h1 { text-align:center; margin-bottom:20px; }
+.logo-container img { height:40px; }
+h1, h2 { text-align:center; margin-bottom:10px; }
 label { font-weight:600; display:block; margin-top:12px; margin-bottom:4px; }
 input, select, button { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
 button { background:#0d6efd; color:white; border:none; cursor:pointer; margin-top:12px; }
 button:hover { background:#084298; }
 .hidden { display:none; }
-#nameDropdown { border:1px solid #ccc; background:white; max-height:180px; overflow-y:auto; position:absolute; z-index:1000; display:none; }
+#nameDropdown { border:1px solid #ccc; background:white; max-height:180px; overflow-y:auto; position:absolute; z-index:1000; }
 #nameDropdown .name-option { padding:8px; cursor:pointer; }
 #nameDropdown .name-option:hover { background:#eef6ff; }
 .message { margin-top:12px; padding:10px; border-radius:10px; display:none; text-align:center; font-weight:600; }
 .success { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
 .error { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+.warning { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
 </style>
 </head>
 <body>
@@ -35,16 +36,19 @@ button:hover { background:#084298; }
         <img src="img/ASWARA.png" alt="ASWARA">
     </div>
 
-    <h1>Sistem Kehadiran & Permohonan Aset</h1>
+    <h1>Sistem Permohonan Aset</h1>
 
-    <form id="attendanceForm">
+    <div id="errorContainer" class="hidden"></div>
+
+    <form id="assetForm">
         <label for="namaInput">Nama <span style="color:red">*</span></label>
         <input type="text" id="namaInput" name="nama" placeholder="Taip untuk cari nama" autocomplete="off" required>
-        <div id="nameDropdown"></div>
+        <div id="nameDropdown" class="hidden"></div>
 
         <label for="jabatan">Jabatan <span style="color:red">*</span></label>
         <input type="text" id="jabatan" name="jabatan" required>
 
+        <!-- Pilihan jenis aset -->
         <label for="jenisSelect">Jenis Aset / Kategori</label>
         <select id="jenisSelect">
             <option value="">-- Pilih --</option>
@@ -58,6 +62,9 @@ button:hover { background:#084298; }
         <input type="text" id="tempoh" placeholder="Tempoh" class="hidden">
         <input type="number" id="kuantiti" placeholder="Kuantiti" class="hidden">
 
+        <!-- Hidden fields -->
+        <input type="hidden" id="timestamp" name="timestamp">
+
         <button type="submit" id="submitBtn">Hantar</button>
     </form>
 
@@ -65,8 +72,7 @@ button:hover { background:#084298; }
 </div>
 
 <script>
-const SESSION_API   = 'https://script.google.com/macros/s/AKfycbwLLs-2eeSwx2V61GZZo8h8BiVmSrbBEdfUBHi_tVl0F7Lzqedr3V82nmNPH39D5gSt/exec';
-const NAMES_API     = 'https://script.google.com/macros/s/AKfycbxasoAjEyWdr57vkkotprtYckPZlKrEFkWySrMkTi1_wLMlTkgUij7uTvAILPrzvrmv/exec';
+const NAMES_API = 'https://script.google.com/macros/s/AKfycbxasoAjEyWdr57vkkotprtYckPZlKrEFkWySrMkTi1_wLMlTkgUij7uTvAILPrzvrmv/exec';
 const POST_API = {
      alat_tulis: "https://script.google.com/macros/s/AKfycbz0msu-Bk1yexgmVsrtPt9vbvu5xqJZLFlj43Bk5JMCJUugCMBlbPOafnSgXbdVsnk6iQ/exec",
   kenderaan: "https://script.google.com/macros/s/AKfycbyNvyn-WzAB-GSx3Fpcd-JD9JmUwPCW4nu2VQh6zKpn5q3Maqgt0Y4UU-Z_CYg_p77fUg/exec",
@@ -74,50 +80,66 @@ const POST_API = {
   kertas_a4: "https://script.google.com/macros/s/AKfycbzhBY_KhGAFRGea-_sNb_yd9QRIXyNBlKNrK5zv5lCYyByGjKgGufZNgYvgCIOug2nH/exec"
 };
 
-let namesData = [];
+let namesData = [], isCustomName = false;
 
-async function loadNamesData(){
-    try{
-        const res = await fetch(NAMES_API);
-        namesData = await res.json();
-    }catch(err){
-        console.error('Error loading names', err);
-    }
+function showMessage(text,type){
+    const msg=document.getElementById('message');
+    msg.textContent=text;
+    msg.className=`message ${type}`;
+    msg.style.display='block';
+    if(type==='success'){setTimeout(()=>msg.style.display='none',5000);}
 }
 
-const namaInput = document.getElementById('namaInput');
-const jabatan = document.getElementById('jabatan');
-const nameDropdown = document.getElementById('nameDropdown');
-const form = document.getElementById('attendanceForm');
-const message = document.getElementById('message');
+function showError(text){
+    const err=document.getElementById('errorContainer');
+    err.innerHTML=text; err.className='message error'; err.style.display='block';
+}
 
-namaInput.addEventListener('input', ()=>{
-    const query = namaInput.value.toLowerCase().trim();
-    if(query.length<2){ nameDropdown.style.display='none'; return; }
-    const filtered = namesData.filter(item=>item.Nama.toLowerCase().includes(query));
-    if(filtered.length===0){ nameDropdown.style.display='none'; return; }
-    nameDropdown.innerHTML='';
-    filtered.forEach(item=>{
-        const div = document.createElement('div');
-        div.className='name-option';
-        div.textContent=item.Nama;
-        div.onclick=()=>{
-            namaInput.value=item.Nama;
-            jabatan.value=item.Jabatan || '';
-            nameDropdown.style.display='none';
-        };
-        nameDropdown.appendChild(div);
+async function loadNamesData(){
+    try{ 
+        const res=await fetch(NAMES_API); 
+        namesData=await res.json(); 
+    }catch(e){ namesData=[]; console.error(e); showError('Gagal memuatkan data nama'); }
+}
+
+function setupNameAutocomplete(){
+    const namaInput=document.getElementById('namaInput');
+    const jabatanInput=document.getElementById('jabatan');
+    const dropdown=document.getElementById('nameDropdown');
+
+    namaInput.addEventListener('input',function(){
+        const q=this.value.trim().toLowerCase();
+        if(!q){ dropdown.classList.add('hidden'); return; }
+        const filtered=namesData.filter(x=>x.Nama.toLowerCase().includes(q));
+        dropdown.innerHTML='';
+        if(filtered.length===0){
+            const div=document.createElement('div');
+            div.className='name-option';
+            div.innerText=`Tambah: "${this.value}"`;
+            div.onclick=()=>{ namaInput.value=this.value; jabatanInput.value=''; dropdown.classList.add('hidden'); };
+            dropdown.appendChild(div);
+        }else{
+            filtered.forEach(item=>{
+                const div=document.createElement('div');
+                div.className='name-option';
+                div.innerText=item.Nama;
+                div.onclick=()=>{
+                    namaInput.value=item.Nama;
+                    jabatanInput.value=item.Jabatan;
+                    dropdown.classList.add('hidden');
+                };
+                dropdown.appendChild(div);
+            });
+        }
+        dropdown.classList.remove('hidden');
     });
-    nameDropdown.style.display='block';
-});
 
-document.addEventListener('click', e=>{
-    if(!namaInput.contains(e.target) && !nameDropdown.contains(e.target)){
-        nameDropdown.style.display='none';
-    }
-});
+    document.addEventListener('click',e=>{
+        if(!namaInput.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden');
+    });
+}
 
-document.getElementById('jenisSelect').addEventListener('change', function(){
+document.getElementById('jenisSelect').addEventListener('change',function(){
     const type=this.value;
     ['item','tempoh','kuantiti'].forEach(id=>document.getElementById(id).classList.add('hidden'));
     if(type==='alat_tulis'){ document.getElementById('item').placeholder='Jenis Alat'; document.getElementById('item').classList.remove('hidden'); document.getElementById('kuantiti').classList.remove('hidden'); }
@@ -126,48 +148,53 @@ document.getElementById('jenisSelect').addEventListener('change', function(){
     if(type==='kertas_a4'){ document.getElementById('kuantiti').classList.remove('hidden'); }
 });
 
-form.addEventListener('submit', async e=>{
+document.getElementById('assetForm').addEventListener('submit',async function(e){
     e.preventDefault();
+    const nama=document.getElementById('namaInput').value.trim();
+    if(!nama){ showMessage('Sila masukkan nama','warning'); return; }
     const jenis=document.getElementById('jenisSelect').value;
-    if(!jenis){ alert('Sila pilih jenis aset'); return; }
+    if(!jenis){ showMessage('Sila pilih jenis aset','warning'); return; }
 
-    const data={
-        Nama: namaInput.value,
-        Jabatan: jabatan.value,
-        JenisAlatan: document.getElementById('item').value || '-',
-        Tempoh: document.getElementById('tempoh').value || '-',
-        Kuantiti: document.getElementById('kuantiti').value || '-',
-        Timestamp: new Date().toLocaleString("ms-MY")
+    document.getElementById('submitBtn').disabled=true;
+    document.getElementById('timestamp').value=new Date().toLocaleString('ms-MY');
+
+    const itemVal=document.getElementById('item').value;
+    const tempohVal=document.getElementById('tempoh').value;
+    const kuantitiVal=document.getElementById('kuantiti').value;
+
+    let postData={ 
+        Nama:nama,
+        Jabatan:document.getElementById('jabatan').value,
+        JenisAlatan:'',
+        Kuantiti:'-',
+        Timestamp:document.getElementById('timestamp').value
     };
 
+    if(jenis==='alat_tulis'){ postData.JenisAlatan=itemVal; postData.Kuantiti=kuantitiVal; }
+    if(jenis==='kenderaan'){ postData.JenisAlatan=itemVal+' ('+tempohVal+')'; }
+    if(jenis==='projektor'){ postData.JenisAlatan='Projektor ('+tempohVal+')'; postData.Kuantiti=itemVal; }
+    if(jenis==='kertas_a4'){ postData.JenisAlatan='Kertas A4'; postData.Kuantiti=kuantitiVal; }
+
     try{
-        const res = await fetch(POST_API[jenis],{
+        const response=await fetch(POST_API[jenis],{
             method:'POST',
-            headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({data: JSON.stringify(data)})
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:new URLSearchParams({data:JSON.stringify(postData)})
         });
-        const result = await res.json();
-        if(result.status==='success'){
-            message.textContent='✅ Data berjaya direkod';
-            message.className='message success';
-            form.reset();
-        } else {
-            message.textContent='✗ Ralat: '+(result.message||'Tidak diketahui');
-            message.className='message error';
-        }
-        message.style.display='block';
-        setTimeout(()=>message.style.display='none',5000);
-    }catch(err){
-        console.error(err);
-        message.textContent='✗ Ralat semasa menghantar';
-        message.className='message error';
-        message.style.display='block';
-    }
+        const result=await response.json();
+        if(result.status==='success'){ 
+            showMessage(`✓ Permohonan ${nama} berjaya direkod!`,'success'); 
+            this.reset();
+        }else{ showMessage('✗ '+(result.message||'Ralat tidak diketahui'),'error'); }
+    }catch(e){ console.error(e); showMessage('✗ Ralat semasa menghantar.','error'); }
+    finally{ document.getElementById('submitBtn').disabled=false; }
 });
 
-document.addEventListener('DOMContentLoaded', loadNamesData);
+document.addEventListener('DOMContentLoaded',async()=>{
+    await loadNamesData();
+    setupNameAutocomplete();
+});
 </script>
 
 </body>
 </html>
-
