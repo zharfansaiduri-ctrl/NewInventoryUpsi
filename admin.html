@@ -1,76 +1,97 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Admin Portal - Kehadiran</title>
+<title>Admin Portal - Permohonan Aset</title>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg1: #1A2350;
-    --bg2: #1FA2FF;
-    --card:#F4F6F8;
-    --accent:#12D8FA;
-    --muted:#6B7280;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:'League Spartan',sans-serif;
-    background: linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-  }
-  .portal-box{
-    width:100%;
-    max-width:420px;
-    background:var(--card);
-    padding:32px;
-    border-radius:16px;
-    box-shadow:0 12px 36px rgba(0,0,0,0.22);
-    text-align:center;
-  }
-  h1{color:var(--bg1);margin-bottom:20px;}
-  button.option{
-    display:block;
-    width:80%;
-    margin:10px auto;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    color:white;
-    background: linear-gradient(135deg,var(--bg2) 0%,var(--accent) 100%);
-    cursor:pointer;
-    transition:all .2s ease;
-  }
-  button.option:hover{transform:translateY(-2px)}
-  button.logout{
-    margin-top:20px;
-    background:#f87171;
-  }
+:root{
+  --bg1: #1A2350;
+  --bg2: #1FA2FF;
+  --card:#F4F6F8;
+  --accent:#12D8FA;
+  --muted:#6B7280;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'League Spartan',sans-serif;
+  background: linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.portal-box{
+  width:100%;
+  max-width:600px;
+  background:var(--card);
+  padding:32px;
+  border-radius:16px;
+  box-shadow:0 12px 36px rgba(0,0,0,0.22);
+  text-align:center;
+}
+h1{color:var(--bg1);margin-bottom:20px;}
+button.option{
+  display:block;
+  width:80%;
+  margin:10px auto;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  color:white;
+  background: linear-gradient(135deg,var(--bg2) 0%,var(--accent) 100%);
+  cursor:pointer;
+  transition:all .2s ease;
+}
+button.option:hover{transform:translateY(-2px)}
+button.logout{
+  margin-top:20px;
+  background:#f87171;
+}
+table{
+  width:100%;
+  border-collapse: collapse;
+  margin-top:20px;
+}
+th, td{
+  padding:10px;
+  border:1px solid #ccc;
+  text-align:left;
+}
+th{
+  background: var(--bg1);
+  color:white;
+}
+.loading{
+  text-align:center;
+  padding:20px;
+  color:var(--muted);
+}
 </style>
 </head>
 <body>
 
 <div class="portal-box">
-  <h1>Admin Portal</h1>
-  <button class="option" onclick="openSheet('kenderaan')">Kenderaan</button>
-  <button class="option" onclick="openSheet('alat_tulis')">Alat Tulis</button>
-  <button class="option" onclick="openSheet('projektor')">Projektor</button>
-  <button class="option" onclick="openSheet('kertas_a4')">Kertas A4</button>
+  <h1>Admin Portal - Permohonan Aset</h1>
+  <button class="option" onclick="loadSheet('kenderaan')">Kenderaan</button>
+  <button class="option" onclick="loadSheet('alat_tulis')">Alat Tulis</button>
+  <button class="option" onclick="loadSheet('projektor')">Projektor</button>
+  <button class="option" onclick="loadSheet('kertas_a4')">Kertas A4</button>
   <button class="logout" onclick="logout()">Log Keluar</button>
+
+  <div id="tableContainer"></div>
 </div>
 
 <script>
 const RESPONSE_API = {
-  alat_tulis: "https://script.google.com/macros/s/AKfycbzKHI_vjI5IcjvoFvSc-gGnv9f7AkrD4RiKc0_ldANOTh2bpqCoRAu9RxFcNxsN1Uh0/exec",
-  kenderaan: "https://script.google.com/macros/s/AKfycbzPqlA3NMUTtTOXeONXDAaHkzDVSiRaeO2BR1DjMPRWIbWjFWhHttIvugXdKLZid1pLmw/exec",
-  projektor: "https://script.google.com/macros/s/AKfycbznhyk7Lp5v8AHBpRxXGj1WwHQHokka-msXbsa25xbpqRm5x6zLi2D6ouJAnCl4fbVp/exec",
-  kertas_a4: "https://script.google.com/macros/s/AKfycbyxzH5cw2n88utYibOn6iGzooDSyMxrXLSKFBJ7rAqrx4Da4UUizOogqAkTc89IUEw7/exec"
+  alat_tulis: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec",
+  kenderaan: "https://script.google.com/macros/s/AKfycbz5mUOfu7hZwAxfsjqvo05Alp7DjOp4cYGMpN6v8tZkdJG5zPnbQJTo0RjBk_rMGpsLjw/exec",
+  projektor: "https://script.google.com/macros/s/AKfycbzgtAwdxQ4MHM9iMCEaqovQk3H6nl7yOPewHtGmX60W97tFTTvG4e-_0x3t-NY5vk_r/exec",
+  kertas_a4: "https://script.google.com/macros/s/AKfycbxXgzHTA_0-PTPu8EItrpMcwwN6NVzgdz78FC0B42DTaFRAPtZ8zZoNDRQlksfe39__/exec"
 };
 
 // kalau tak login, redirect ke login
@@ -78,10 +99,38 @@ if(sessionStorage.getItem('isLoggedIn') !== 'true'){
   window.location.href = 'adminlogin.html';
 }
 
-function openSheet(type){
-  const url = RESPONSE_API[type];
-  if(!url){alert("Jenis tidak ditemui!"); return;}
-  window.open(url,'_blank'); // buka API/sheet di tab baru
+function loadSheet(type){
+  const apiUrl = RESPONSE_API[type];
+  const container = document.getElementById('tableContainer');
+  container.innerHTML = `<div class="loading">Memuatkan data ${type}...</div>`;
+
+  fetch(apiUrl)
+    .then(res=>res.json())
+    .then(data=>{
+      if(!Array.isArray(data) || data.length===0){
+        container.innerHTML = `<div class="loading">Tiada data ditemui untuk ${type}.</div>`;
+        return;
+      }
+      // bina table
+      let html = `<table><thead><tr>`;
+      Object.keys(data[0]).forEach(key=>{
+        html+=`<th>${key}</th>`;
+      });
+      html += `</tr></thead><tbody>`;
+      data.forEach((row,idx)=>{
+        html+=`<tr>`;
+        Object.values(row).forEach(val=>{
+          html+=`<td>${val||'-'}</td>`;
+        });
+        html+=`</tr>`;
+      });
+      html+=`</tbody></table>`;
+      container.innerHTML = html;
+    })
+    .catch(err=>{
+      container.innerHTML = `<div class="loading">Ralat memuatkan data: ${err}</div>`;
+      console.error(err);
+    });
 }
 
 function logout(){
