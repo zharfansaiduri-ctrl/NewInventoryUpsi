@@ -50,12 +50,12 @@ button:hover { background:#084298; }
 <div class="box">
   <h2>Permohonan Aset</h2>
 
-  <!-- 🔹 FORM SUBMIT TERUS (NO FETCH = NO CORS) -->
+  <!-- 🔹 FORM SUBMIT TERUS KE APPS SCRIPT -->
   <form id="form" method="POST" target="hidden_iframe">
-    <input name="Nama" id="nama" placeholder="Nama" autocomplete="off" required>
+    <input name="nama" id="nama" placeholder="Nama" autocomplete="off" required>
     <div id="suggestions" class="hidden"></div>
 
-    <input name="Jabatan" id="jabatan" placeholder="Jabatan" required>
+    <input name="jabatan" id="jabatan" placeholder="Jabatan" required>
 
     <select id="jenis" required>
       <option value="">-- Pilih Aset --</option>
@@ -65,10 +65,10 @@ button:hover { background:#084298; }
       <option value="kertas_a4">Kertas A4</option>
     </select>
 
-    <!-- Hidden fields (yang Apps Script baca) -->
-    <input type="hidden" name="Jenis Alatan" id="jenisAlatan">
-    <input type="hidden" name="Kuantiti" id="kuantitiFinal">
-    <input type="hidden" name="Timestamp" id="timestamp">
+    <!-- Hidden fields untuk Apps Script -->
+    <input type="hidden" name="jenis_alatan" id="jenisAlatan">
+    <input type="hidden" name="kuantiti" id="kuantitiFinal">
+    <input type="hidden" name="timestamp" id="timestamp">
 
     <!-- Input dinamik -->
     <input id="item" placeholder="Jenis / Bilangan" class="hidden">
@@ -146,7 +146,7 @@ function updateField(type) {
 }
 jenis.addEventListener("change",()=>updateField(jenis.value));
 
-/* ================== SUBMIT (FORM ACTION HACK) ================== */
+/* ================== SUBMIT (SET HIDDEN + ACTION) ================== */
 form.addEventListener("submit", () => {
   timestamp.value = new Date().toLocaleString("ms-MY");
 
