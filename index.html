@@ -45,7 +45,7 @@ button:hover { background:#084298; }
         <div id="nameDropdown" class="hidden"></div>
 
         <label for="jabatan">Jabatan <span style="color:red">*</span></label>
-        <input type="text" id="jabatan" name="jabatan" required readonly>
+        <input type="text" id="jabatan" name="jabatan" required>
 
         <label for="jenisSelect">Jenis Aset / Kategori</label>
         <select id="jenisSelect">
@@ -106,7 +106,7 @@ async function loadNamesData(){
             return clean;
         });
 
-        console.log('Names Data:', namesData); // semak console
+        console.log('Names Data:', namesData);
     }catch(e){ namesData=[]; console.error(e); showError('Gagal memuatkan data nama'); }
 }
 
@@ -146,7 +146,7 @@ function setupNameAutocomplete(){
 
                 div.onclick=()=>{
                     namaInput.value=item.Nama;
-                    // AUTO isi jabatan robust
+                    // AUTO isi jabatan
                     jabatanInput.value = item.Jabatan ?? item.jabatan ?? '';
                     dropdown.classList.add('hidden');
                 };
