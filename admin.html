@@ -52,10 +52,9 @@
     margin-top:20px;
     background:#f87171;
     padding:12px 20px;
-    cursor:pointer;
   }
   .table-container{
-    margin-top:20px;
+    margin-top:30px;
     overflow-x:auto;
   }
   table{
@@ -80,34 +79,6 @@
     color:var(--muted);
     padding:15px;
   }
-  .search-box{
-    margin-top:20px;
-    text-align:right;
-  }
-  .search-box input{
-    padding:6px 10px;
-    font-size:14px;
-    border-radius:6px;
-    border:1px solid #ccc;
-    width:200px;
-  }
-  .pagination{
-    margin-top:15px;
-    text-align:center;
-  }
-  .pagination button{
-    padding:6px 10px;
-    margin:2px;
-    border:none;
-    border-radius:6px;
-    cursor:pointer;
-    background:#12D8FA;
-    color:white;
-    transition:0.2s;
-  }
-  .pagination button.active{
-    background:#1A2350;
-  }
 </style>
 </head>
 <body>
@@ -122,27 +93,18 @@
   </div>
   <button class="logout" onclick="logout()">Log Keluar</button>
 
-  <div class="search-box">
-    <input type="text" id="searchInput" placeholder="Cari data..." oninput="filterTable()">
-  </div>
-
   <div id="tableContainer" class="table-container"></div>
-  <div id="pagination" class="pagination"></div>
 </div>
 
 <script>
 const RESPONSE_API = {
-  alat_tulis: "https://script.google.com/macros/s/AKfycbzKHI_vjI5IcjvoFvSc-gGnv9f7AkrD4RiKc0_ldANOTh2bpqCoRAu9RxFcNxsN1Uh0/exec",
-  kenderaan: "https://script.google.com/macros/s/AKfycbxZBQuiuH0Z82rR9gulJQZjQfB_lUEd_8zLunhsZS5i_MgAedhIBjXoQHlItnWIHLSKQA/exec",
-  projektor: "https://script.google.com/macros/s/AKfycbwmiTbvX0dtdFuAayUvoQ3ySyYK0zF1hY-c2XMKEA-Vg3hr60TzCPXWym6l8UTzQJnF/exec",
-  kertas_a4: "https://script.google.com/macros/s/AKfycbwqMcnwr_4OU1HrOrCS0oQdIl2GXWuSa46SqXfCN1uGks3m_9E8nevhRKMK2Ivx0Bzl/exec"
+  kenderaan: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec?sheet=kenderaan",
+  alat_tulis: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec?sheet=alat_tulis",
+  projektor: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec?sheet=projektor",
+  kertas_a4: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec?sheet=kertas_a4"
 };
 
-let allData = [];
-let currentPage = 1;
-const rowsPerPage = 10;
-let headers = [];
-
+// Redirect ke login kalau belum login
 if(sessionStorage.getItem('isLoggedIn') !== 'true'){
   window.location.href='adminlogin.html';
 }
@@ -151,81 +113,36 @@ function loadSheet(type){
   const apiUrl = RESPONSE_API[type];
   const container = document.getElementById('tableContainer');
   container.innerHTML = `<div class="loading">Memuatkan data ${type}...</div>`;
-  currentPage = 1;
-  document.getElementById('searchInput').value = '';
 
   fetch(apiUrl)
-    .then(res => res.json())
-    .then(data => {
+    .then(res=>res.json())
+    .then(data=>{
       if(!Array.isArray(data) || data.length===0){
         container.innerHTML = `<div class="loading">Tiada data ditemui untuk ${type}.</div>`;
-        document.getElementById('pagination').innerHTML = '';
         return;
       }
 
-      allData = data;
-      headers = Object.keys(data[0]);
-      renderTable();
+      const headers = Object.keys(data[0]);
+
+      let html = `<table><thead><tr>`;
+      headers.forEach(h=>html+=`<th>${h}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      data.forEach(row=>{
+        html += `<tr>`;
+        headers.forEach(h=>{
+          html += `<td>${row[h]!==undefined?row[h]:'-'}</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
     })
-    .catch(err => {
+    .catch(err=>{
       container.innerHTML = `<div class="loading">Ralat memuatkan data: ${err}</div>`;
       console.error(err);
     });
-}
-
-function renderTable(){
-  const container = document.getElementById('tableContainer');
-  const paginationDiv = document.getElementById('pagination');
-  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-
-  // filter data
-  let filtered = allData.filter(row => {
-    return headers.some(h => (row[h]+'').toLowerCase().includes(searchTerm));
-  });
-
-  const totalPages = Math.ceil(filtered.length / rowsPerPage);
-  if(currentPage > totalPages) currentPage = 1;
-
-  const start = (currentPage -1)*rowsPerPage;
-  const end = start + rowsPerPage;
-  const pageData = filtered.slice(start, end);
-
-  if(pageData.length===0){
-    container.innerHTML = `<div class="loading">Tiada data ditemui.</div>`;
-    paginationDiv.innerHTML = '';
-    return;
-  }
-
-  // bina table
-  let html = `<table><thead><tr>`;
-  headers.forEach(h => html += `<th>${h}</th>`);
-  html += `</tr></thead><tbody>`;
-
-  pageData.forEach(row => {
-    html += `<tr>`;
-    headers.forEach(h => html += `<td>${row[h]||'-'}</td>`);
-    html += `</tr>`;
-  });
-
-  html += `</tbody></table>`;
-  container.innerHTML = html;
-
-  // pagination buttons
-  let pagHtml = '';
-  for(let i=1;i<=totalPages;i++){
-    pagHtml += `<button class="${i===currentPage?'active':''}" onclick="gotoPage(${i})">${i}</button>`;
-  }
-  paginationDiv.innerHTML = pagHtml;
-}
-
-function gotoPage(page){
-  currentPage = page;
-  renderTable();
-}
-
-function filterTable(){
-  currentPage = 1;
-  renderTable();
 }
 
 function logout(){
