@@ -2,94 +2,67 @@
 <html lang="ms">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Portal - Sistem Permohonan</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Admin Portal - Kehadiran</title>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
 <style>
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family: 'League Spartan', sans-serif; background:#f2f2f2; padding:20px; }
-.container { max-width:1200px; margin:auto; }
-.header { background:#fff; padding:30px; border-radius:20px; margin-bottom:30px; box-shadow:0 5px 15px rgba(0,0,0,0.1); position:relative;}
-.header h1 { font-size:28px; margin-bottom:5px; }
-.header p { color:#4A4A4A; font-size:14px; }
-.refresh-btn { position:absolute; right:30px; top:30px; padding:10px 15px; background:#1FA2FF; color:white; border:none; border-radius:8px; cursor:pointer; }
-.refresh-btn:hover { background:#12D8FA; }
-.filter-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:15px; }
-.filter-bar select, .filter-bar input { padding:10px 15px; border:2px solid #a0a0a0; border-radius:8px; flex:1; min-width:150px; }
-.filter-bar button { padding:10px 15px; background:#1FA2FF; color:white; border:none; border-radius:8px; cursor:pointer; }
-.filter-bar button:hover { background:#12D8FA; }
-.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; margin-bottom:15px; }
-.stat-card { background:white; padding:15px; border-radius:10px; text-align:center; box-shadow:0 5px 10px rgba(0,0,0,0.05);}
-.stat-value { font-size:20px; font-weight:bold; color:#1FA2FF; }
-.stat-label { font-size:12px; color:#4A4A4A; margin-top:3px; }
-.table-container { overflow-x:auto; background:white; border-radius:12px; box-shadow:0 5px 10px rgba(0,0,0,0.05); }
-table { width:100%; border-collapse:collapse; }
-th, td { padding:12px; text-align:left; border-bottom:1px solid #e0e0e0; }
-th { background:#1A2350; color:white; font-weight:600; position:sticky; top:0; }
-tr:hover { background:#f8f9fa; }
-.loading, .no-data { text-align:center; padding:30px; color:#4A4A4A; font-size:16px; }
-.pdf-btn { margin-top:10px; padding:10px 15px; background:#d32f2f; color:white; border:none; border-radius:8px; cursor:pointer; }
-.pdf-btn:hover { background:#f44336; }
-@media(max-width:768px){.filter-bar{flex-direction:column;}.filter-bar select,.filter-bar input{width:100%;}}
+  :root{
+    --bg1: #1A2350;
+    --bg2: #1FA2FF;
+    --card:#F4F6F8;
+    --accent:#12D8FA;
+    --muted:#6B7280;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:'League Spartan',sans-serif;
+    background: linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .portal-box{
+    width:100%;
+    max-width:420px;
+    background:var(--card);
+    padding:32px;
+    border-radius:16px;
+    box-shadow:0 12px 36px rgba(0,0,0,0.22);
+    text-align:center;
+  }
+  h1{color:var(--bg1);margin-bottom:20px;}
+  button.option{
+    display:block;
+    width:80%;
+    margin:10px auto;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    font-size:16px;
+    color:white;
+    background: linear-gradient(135deg,var(--bg2) 0%,var(--accent) 100%);
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  button.option:hover{transform:translateY(-2px)}
+  button.logout{
+    margin-top:20px;
+    background:#f87171;
+  }
 </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>Admin Portal - Sistem Permohonan</h1>
-        <p>Dicipta oleh UPSI Holdings Sdn. Bhd.</p>
-        <button class="refresh-btn" onclick="logout()">Log Keluar</button>
-    </div>
 
-    <div class="filter-bar">
-        <select id="statusFilter" onchange="filterPermohonan()">
-            <option value="">Semua Status</option>
-            <option value="Pending">Pending</option>
-            <option value="Diluluskan">Diluluskan</option>
-            <option value="Ditolak">Ditolak</option>
-        </select>
-        <input type="text" id="searchInput" placeholder="Cari nama/jabatan/aset..." onkeyup="filterPermohonan()">
-        <button onclick="loadPermohonanData()">Muat Semula</button>
-    </div>
-
-    <div class="stats">
-        <div class="stat-card">
-            <div class="stat-value" id="totalPermohonan">0</div>
-            <div class="stat-label">Jumlah Permohonan</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="pendingCount">0</div>
-            <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value" id="approvedCount">0</div>
-            <div class="stat-label">Diluluskan</div>
-        </div>
-    </div>
-
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>Nama</th>
-                    <th>Jabatan</th>
-                    <th>Aset</th>
-                    <th>Kuantiti</th>
-                    <th>Status</th>
-                    <th>Tarikh & Masa</th>
-                </tr>
-            </thead>
-            <tbody id="permohonanTable">
-                <tr><td colspan="7" class="loading">Memuatkan data...</td></tr>
-            </tbody>
-        </table>
-    </div>
-
-    <button class="pdf-btn" onclick="downloadPDF()">Muat Turun PDF</button>
+<div class="portal-box">
+  <h1>Admin Portal</h1>
+  <button class="option" onclick="openSheet('kenderaan')">Kenderaan</button>
+  <button class="option" onclick="openSheet('alat_tulis')">Alat Tulis</button>
+  <button class="option" onclick="openSheet('projektor')">Projektor</button>
+  <button class="option" onclick="openSheet('kertas_a4')">Kertas A4</button>
+  <button class="logout" onclick="logout()">Log Keluar</button>
 </div>
 
 <script>
@@ -100,97 +73,22 @@ const RESPONSE_API = {
   kertas_a4: "https://script.google.com/macros/s/AKfycbyxzH5cw2n88utYibOn6iGzooDSyMxrXLSKFBJ7rAqrx4Da4UUizOogqAkTc89IUEw7/exec"
 };
 
-let permohonanData = {};
-let currentFilteredData = [];
-
-async function loadPermohonanData() {
-    const tbody = document.getElementById('permohonanTable');
-    tbody.innerHTML = '<tr><td colspan="7" class="loading">Memuatkan data...</td></tr>';
-
-    permohonanData = {};
-    currentFilteredData = [];
-
-    try {
-        const requests = Object.keys(RESPONSE_API).map(async key => {
-            const res = await fetch(RESPONSE_API[key] + '?action=getPermohonan');
-            const data = await res.json();
-            permohonanData[key] = Array.isArray(data) ? data : [];
-        });
-        await Promise.all(requests);
-
-        Object.keys(permohonanData).forEach(key => {
-            currentFilteredData = currentFilteredData.concat(permohonanData[key]);
-        });
-
-        displayPermohonanData(currentFilteredData);
-        updateStats(currentFilteredData);
-
-    } catch (err) {
-        console.error(err);
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">Gagal memuatkan data dari server</td></tr>';
-    }
+// kalau tak login, redirect ke login
+if(sessionStorage.getItem('isLoggedIn') !== 'true'){
+  window.location.href = 'adminlogin.html';
 }
 
-function displayPermohonanData(data) {
-    const tbody = document.getElementById('permohonanTable');
-    if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="no-data">Tiada permohonan.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = data.map((r,i) => `
-        <tr>
-            <td>${i+1}</td>
-            <td>${r.Nama || '-'}</td>
-            <td>${r.Jabatan || '-'}</td>
-            <td>${r.Aset || '-'}</td>
-            <td>${r.Kuantiti || '-'}</td>
-            <td>${r.Status || '-'}</td>
-            <td>${r['Tarikh & Masa'] || '-'}</td>
-        </tr>
-    `).join('');
+function openSheet(type){
+  const url = RESPONSE_API[type];
+  if(!url){alert("Jenis tidak ditemui!"); return;}
+  window.open(url,'_blank'); // buka API/sheet di tab baru
 }
 
-function filterPermohonan() {
-    const status = document.getElementById('statusFilter').value.toLowerCase();
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    let filtered = [];
-    Object.keys(permohonanData).forEach(sheet => {
-        if (Array.isArray(permohonanData[sheet])) filtered = filtered.concat(permohonanData[sheet]);
-    });
-    if(status) filtered = filtered.filter(r => r.Status && r.Status.toLowerCase()===status);
-    if(search) filtered = filtered.filter(r =>
-        (r.Nama && r.Nama.toLowerCase().includes(search)) ||
-        (r.Jabatan && r.Jabatan.toLowerCase().includes(search)) ||
-        (r.Aset && r.Aset.toLowerCase().includes(search))
-    );
-    currentFilteredData = filtered;
-    displayPermohonanData(filtered);
-    updateStats(filtered);
+function logout(){
+  sessionStorage.removeItem('isLoggedIn');
+  window.location.href='adminlogin.html';
 }
-
-function updateStats(data){
-    document.getElementById('totalPermohonan').textContent = data.length;
-    document.getElementById('pendingCount').textContent = data.filter(r=>r.Status==='Pending').length;
-    document.getElementById('approvedCount').textContent = data.filter(r=>r.Status==='Diluluskan').length;
-}
-
-function logout(){ sessionStorage.clear(); window.location.href="adminlogin.html"; }
-
-async function downloadPDF(){
-    if(currentFilteredData.length===0){ alert('Tiada data untuk dimuat turun.'); return; }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(16); doc.text("Laporan Permohonan Aset",14,20);
-    const columns = ["No.","Nama","Jabatan","Aset","Kuantiti","Status","Tarikh & Masa"];
-    const rows = currentFilteredData.map((r,i)=>[
-        i+1, r.Nama||'-', r.Jabatan||'-', r.Aset||'-', r.Kuantiti||'-', r.Status||'-', r['Tarikh & Masa']||'-'
-    ]);
-    doc.autoTable({ head:[columns], body:rows, startY:30, theme:'striped', headStyles:{fillColor:[26,35,80], textColor:255} });
-    doc.save(`Permohonan_${new Date().getTime()}.pdf`);
-}
-
-document.addEventListener('DOMContentLoaded',()=>{ loadPermohonanData(); });
 </script>
+
 </body>
 </html>
-
