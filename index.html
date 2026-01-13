@@ -11,20 +11,19 @@
 body { font-family:'League Spartan',sans-serif; background:#f2f2f2; padding:20px; }
 .form-container { max-width:500px; margin:auto; background:white; padding:30px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1); }
 .logo-container { display:flex; justify-content:center; gap:10px; margin-bottom:20px; }
-.logo-container img { height:40px; }
-h1, h2 { text-align:center; margin-bottom:10px; }
+.logo-container img { height:40px; object-fit:contain; }
+h1 { text-align:center; margin-bottom:20px; }
 label { font-weight:600; display:block; margin-top:12px; margin-bottom:4px; }
 input, select, button { width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; font-size:14px; }
 button { background:#0d6efd; color:white; border:none; cursor:pointer; margin-top:12px; }
 button:hover { background:#084298; }
 .hidden { display:none; }
-#nameDropdown, #suggestions { border:1px solid #ccc; background:white; max-height:180px; overflow-y:auto; position:absolute; z-index:1000; }
-#nameDropdown .name-option, #suggestions div { padding:8px; cursor:pointer; }
-#nameDropdown .name-option:hover, #suggestions div:hover { background:#eef6ff; }
+#nameDropdown { border:1px solid #ccc; background:white; max-height:180px; overflow-y:auto; position:absolute; z-index:1000; display:none; }
+#nameDropdown .name-option { padding:8px; cursor:pointer; }
+#nameDropdown .name-option:hover { background:#eef6ff; }
 .message { margin-top:12px; padding:10px; border-radius:10px; display:none; text-align:center; font-weight:600; }
 .success { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
 .error { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
-.warning { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
 </style>
 </head>
 <body>
@@ -38,31 +37,14 @@ button:hover { background:#084298; }
 
     <h1>Sistem Kehadiran & Permohonan Aset</h1>
 
-    <div id="errorContainer" class="hidden"></div>
-
-    <div id="sessionInfoBox" class="hidden">
-        <h2>Maklumat Sesi</h2>
-        <p><strong>Sesi:</strong> <span id="displaySesi">-</span></p>
-        <p><strong>Modul:</strong> <span id="displayModul">-</span></p>
-        <p><strong>Tarikh:</strong> <span id="displayTarikh">-</span></p>
-    </div>
-
-    <form id="attendanceForm" class="hidden">
+    <form id="attendanceForm">
         <label for="namaInput">Nama <span style="color:red">*</span></label>
         <input type="text" id="namaInput" name="nama" placeholder="Taip untuk cari nama" autocomplete="off" required>
-        <div id="nameDropdown" class="name-dropdown hidden"></div>
+        <div id="nameDropdown"></div>
 
         <label for="jabatan">Jabatan <span style="color:red">*</span></label>
         <input type="text" id="jabatan" name="jabatan" required>
 
-        <label for="trainer">Trainer/Trainee <span style="color:red">*</span></label>
-        <select id="trainer" name="trainer" required>
-            <option value="">Pilih kategori...</option>
-            <option value="UPSI">UPSI</option>
-            <option value="ASWARA">ASWARA</option>
-        </select>
-
-        <!-- Tambahan dari borang aset -->
         <label for="jenisSelect">Jenis Aset / Kategori</label>
         <select id="jenisSelect">
             <option value="">-- Pilih --</option>
@@ -75,14 +57,6 @@ button:hover { background:#084298; }
         <input type="text" id="item" placeholder="Jenis / Bilangan" class="hidden">
         <input type="text" id="tempoh" placeholder="Tempoh" class="hidden">
         <input type="number" id="kuantiti" placeholder="Kuantiti" class="hidden">
-
-        <!-- Hidden fields -->
-        <input type="hidden" id="sesi" name="sesi">
-        <input type="hidden" id="modul" name="modul">
-        <input type="hidden" id="tarikh" name="tarikh">
-        <input type="hidden" id="jenisAlatan" name="jenisAlatan">
-        <input type="hidden" id="kuantitiFinal" name="kuantitiFinal">
-        <input type="hidden" id="timestamp" name="timestamp">
 
         <button type="submit" id="submitBtn">Hantar</button>
     </form>
@@ -100,99 +74,50 @@ const POST_API = {
   kertas_a4: "https://script.google.com/macros/s/AKfycbzhBY_KhGAFRGea-_sNb_yd9QRIXyNBlKNrK5zv5lCYyByGjKgGufZNgYvgCIOug2nH/exec"
 };
 
-
-let sessionData = {}, namesData = [], isCustomName = false, allAttendanceData = [];
-
-function showMessage(text,type){
-    const msg=document.getElementById('message');
-    msg.textContent=text;
-    msg.className=`message ${type}`;
-    msg.style.display='block';
-    if(type==='success'){setTimeout(()=>msg.style.display='none',5000);}
-}
-
-function showError(text){
-    const err=document.getElementById('errorContainer');
-    err.innerHTML=text; err.className='message error'; err.style.display='block';
-}
-
-function hideError(){
-    const err=document.getElementById('errorContainer');
-    err.style.display='none';
-}
-
-async function loadSessionData(){
-    try{
-        const res=await fetch(SESSION_API);
-        const data=await res.json();
-        data.forEach(item=>{ if(item.url) sessionData[item.url]=item; });
-        await loadNamesData();
-        await loadAttendanceData();
-        initializeForm();
-    }catch(e){ console.error(e); showError('Ralat memuatkan data sesi'); }
-}
+let namesData = [];
 
 async function loadNamesData(){
-    try{ const res=await fetch(NAMES_API); namesData=await res.json(); }catch(e){ namesData=[]; }
+    try{
+        const res = await fetch(NAMES_API);
+        namesData = await res.json();
+    }catch(err){
+        console.error('Error loading names', err);
+    }
 }
 
-async function loadAttendanceData(){
-    try{ 
-        const res=await fetch(`${ENDPOINT_POST}?action=getAttendance`);
-        const data=await res.json();
-        allAttendanceData=[];
-        Object.keys(data).forEach(sheet=>{ if(Array.isArray(data[sheet])) allAttendanceData=allAttendanceData.concat(data[sheet]); });
-    }catch(e){ allAttendanceData=[]; }
-}
+const namaInput = document.getElementById('namaInput');
+const jabatan = document.getElementById('jabatan');
+const nameDropdown = document.getElementById('nameDropdown');
+const form = document.getElementById('attendanceForm');
+const message = document.getElementById('message');
 
-function checkDuplicate(nama,sesi){ return allAttendanceData.find(r=>r.Nama?.toLowerCase().trim()===nama.toLowerCase().trim() && r.Sesi===sesi); }
-
-function initializeForm(){
-    const urlParam=(new URLSearchParams(window.location.search)).get('url');
-    if(!urlParam || !sessionData[urlParam]){ showError('QR Code tidak sah'); return; }
-    const data=sessionData[urlParam];
-    document.getElementById('sesi').value=data.sesi;
-    document.getElementById('modul').value=data.modul;
-    document.getElementById('tarikh').value=data.tarikhMasa;
-    document.getElementById('displaySesi').textContent=urlParam;
-    document.getElementById('displayModul').textContent=data.modul;
-    document.getElementById('displayTarikh').textContent=data.tarikhMasa;
-    document.getElementById('sessionInfoBox').classList.remove('hidden');
-    document.getElementById('attendanceForm').classList.remove('hidden');
-    setupNameAutocomplete();
-}
-
-function setupNameAutocomplete(){
-    const namaInput=document.getElementById('namaInput');
-    const dropdown=document.getElementById('nameDropdown');
-    let selectedIndex=-1;
-
-    namaInput.addEventListener('input',function(){
-        const q=this.value.trim().toLowerCase();
-        if(!q){ dropdown.classList.add('hidden'); return; }
-        const filtered=namesData.filter(x=>x.Nama.toLowerCase().includes(q));
-        if(!filtered.length){ dropdown.innerHTML=`<div class="name-option">Tambah: "${this.value}"</div>`; dropdown.classList.remove('hidden'); isCustomName=true; return; }
-        dropdown.innerHTML='';
-        filtered.forEach((item,i)=>{ 
-            const div=document.createElement('div'); 
-            div.className='name-option'; 
-            div.dataset.jabatan=item.Jabatan; div.dataset.trainer=item['Trainer/Trainee']; 
-            div.innerText=item.Nama; 
-            div.onclick=()=>{ 
-                namaInput.value=item.Nama;
-                document.getElementById('jabatan').value=item.Jabatan;
-                document.getElementById('trainer').value=item['Trainer/Trainee'];
-                dropdown.classList.add('hidden'); isCustomName=false;
-            };
-            dropdown.appendChild(div);
-        });
-        dropdown.classList.remove('hidden');
+namaInput.addEventListener('input', ()=>{
+    const query = namaInput.value.toLowerCase().trim();
+    if(query.length<2){ nameDropdown.style.display='none'; return; }
+    const filtered = namesData.filter(item=>item.Nama.toLowerCase().includes(query));
+    if(filtered.length===0){ nameDropdown.style.display='none'; return; }
+    nameDropdown.innerHTML='';
+    filtered.forEach(item=>{
+        const div = document.createElement('div');
+        div.className='name-option';
+        div.textContent=item.Nama;
+        div.onclick=()=>{
+            namaInput.value=item.Nama;
+            jabatan.value=item.Jabatan || '';
+            nameDropdown.style.display='none';
+        };
+        nameDropdown.appendChild(div);
     });
+    nameDropdown.style.display='block';
+});
 
-    document.addEventListener('click',e=>{ if(!namaInput.contains(e.target) && !dropdown.contains(e.target)) dropdown.classList.add('hidden'); });
-}
+document.addEventListener('click', e=>{
+    if(!namaInput.contains(e.target) && !nameDropdown.contains(e.target)){
+        nameDropdown.style.display='none';
+    }
+});
 
-document.getElementById('jenisSelect').addEventListener('change',function(){
+document.getElementById('jenisSelect').addEventListener('change', function(){
     const type=this.value;
     ['item','tempoh','kuantiti'].forEach(id=>document.getElementById(id).classList.add('hidden'));
     if(type==='alat_tulis'){ document.getElementById('item').placeholder='Jenis Alat'; document.getElementById('item').classList.remove('hidden'); document.getElementById('kuantiti').classList.remove('hidden'); }
@@ -201,54 +126,47 @@ document.getElementById('jenisSelect').addEventListener('change',function(){
     if(type==='kertas_a4'){ document.getElementById('kuantiti').classList.remove('hidden'); }
 });
 
-document.getElementById('attendanceForm').addEventListener('submit',async function(e){
+form.addEventListener('submit', async e=>{
     e.preventDefault();
-    const nama=document.getElementById('namaInput').value.trim();
-    const sesi=document.getElementById('sesi').value;
-    if(checkDuplicate(nama,sesi)){ showMessage(`⚠️ Kehadiran "${nama}" di Sesi ${sesi} sudah direkod!`,'warning'); return; }
-
-    document.getElementById('submitBtn').disabled=true;
-    document.getElementById('timestamp').value=new Date().toLocaleString('ms-MY');
-
     const jenis=document.getElementById('jenisSelect').value;
-    const itemVal=document.getElementById('item').value;
-    const tempohVal=document.getElementById('tempoh').value;
-    const kuantitiVal=document.getElementById('kuantiti').value;
+    if(!jenis){ alert('Sila pilih jenis aset'); return; }
 
-    if(jenis==='alat_tulis'){ document.getElementById('jenisAlatan').value=itemVal; document.getElementById('kuantitiFinal').value=kuantitiVal; }
-    if(jenis==='kenderaan'){ document.getElementById('jenisAlatan').value=itemVal+' ('+tempohVal+')'; document.getElementById('kuantitiFinal').value='-'; }
-    if(jenis==='projektor'){ document.getElementById('jenisAlatan').value='Projektor ('+tempohVal+')'; document.getElementById('kuantitiFinal').value=itemVal; }
-    if(jenis==='kertas_a4'){ document.getElementById('jenisAlatan').value='Kertas A4'; document.getElementById('kuantitiFinal').value=kuantitiVal; }
-
-    const postData={
-        url:(new URLSearchParams(window.location.search)).get('url'),
-        Nama:nama,
-        Jabatan:document.getElementById('jabatan').value,
-        'Trainer/Trainee':document.getElementById('trainer').value,
-        Sesi:sesi,
-        Modul:document.getElementById('modul').value,
-        'Tarikh & Masa':document.getElementById('tarikh').value,
-        JenisAlatan:document.getElementById('jenisAlatan').value,
-        Kuantiti:document.getElementById('kuantitiFinal').value,
-        Timestamp:document.getElementById('timestamp').value
+    const data={
+        Nama: namaInput.value,
+        Jabatan: jabatan.value,
+        JenisAlatan: document.getElementById('item').value || '-',
+        Tempoh: document.getElementById('tempoh').value || '-',
+        Kuantiti: document.getElementById('kuantiti').value || '-',
+        Timestamp: new Date().toLocaleString("ms-MY")
     };
 
     try{
-        const response=await fetch(jenis?POST_API[jenis]:ENDPOINT_POST,{
+        const res = await fetch(POST_API[jenis],{
             method:'POST',
-            headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            body:new URLSearchParams({data:JSON.stringify(postData)})
+            headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({data: JSON.stringify(data)})
         });
-        const result=await response.json();
-        if(result.status==='success'){ showMessage(`✓ Kehadiran ${nama} berjaya direkod!`,'success'); allAttendanceData.push(postData); this.reset(); document.getElementById('trainer').disabled=false; }
-        else{ showMessage('✗ '+(result.message||'Ralat tidak diketahui'),'error'); }
-    }catch(e){ console.error(e); showMessage('✗ Ralat semasa menghantar.','error'); }
-    finally{ document.getElementById('submitBtn').disabled=false; }
+        const result = await res.json();
+        if(result.status==='success'){
+            message.textContent='✅ Data berjaya direkod';
+            message.className='message success';
+            form.reset();
+        } else {
+            message.textContent='✗ Ralat: '+(result.message||'Tidak diketahui');
+            message.className='message error';
+        }
+        message.style.display='block';
+        setTimeout(()=>message.style.display='none',5000);
+    }catch(err){
+        console.error(err);
+        message.textContent='✗ Ralat semasa menghantar';
+        message.className='message error';
+        message.style.display='block';
+    }
 });
 
-document.addEventListener('DOMContentLoaded',loadSessionData);
+document.addEventListener('DOMContentLoaded', loadNamesData);
 </script>
 
 </body>
 </html>
-
