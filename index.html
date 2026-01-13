@@ -132,9 +132,11 @@ function setupNameAutocomplete(){
                 const div=document.createElement('div');
                 div.className='name-option';
                 div.innerHTML=highlightText(item.Nama,q);
+
                 div.onclick=()=>{
                     namaInput.value=item.Nama;
-                    jabatanInput.value=item.Jabatan; // auto isi jabatan
+                    // AUTO isi jabatan robust (case insensitive)
+                    jabatanInput.value = item.Jabatan ?? item.jabatan ?? '';
                     dropdown.classList.add('hidden');
                 };
                 dropdown.appendChild(div);
