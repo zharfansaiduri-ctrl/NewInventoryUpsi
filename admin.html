@@ -4,93 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Admin Portal - Kehadiran</title>
+
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --bg1: #1A2350;
-    --bg2: #1FA2FF;
-    --card:#F4F6F8;
-    --accent:#12D8FA;
-    --muted:#6B7280;
-  }
-  *{box-sizing:border-box}
-  body{
-    margin:0;
-    font-family:'League Spartan',sans-serif;
-    background: linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 100%);
-    min-height:100vh;
-    display:flex;
-    align-items:flex-start;
-    justify-content:center;
-    padding:20px;
-  }
-  .portal-box{
-    width:100%;
-    max-width:1000px;
-    background:var(--card);
-    padding:32px;
-    border-radius:16px;
-    box-shadow:0 12px 36px rgba(0,0,0,0.22);
-    text-align:center;
-  }
-  h1{color:var(--bg1);margin-bottom:20px;}
-  button.option{
-    display:inline-block;
-    width:180px;
-    margin:10px 8px;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    font-size:16px;
-    color:white;
-    background: linear-gradient(135deg,var(--bg2) 0%,var(--accent) 100%);
-    cursor:pointer;
-    transition:all .2s ease;
-  }
-  button.option:hover{transform:translateY(-2px)}
-  button.logout{
-    margin-top:20px;
-    background:#f87171;
-    padding:12px 20px;
-  }
-  .table-container{
-    margin-top:30px;
-    overflow-x:auto;
-  }
-  table{
-    width:100%;
-    border-collapse:collapse;
-    font-size:14px;
-  }
-  th,td{
-    border:1px solid #ddd;
-    padding:8px;
-    text-align:left;
-  }
-  th{
-    background:var(--bg1);
-    color:white;
-    position: sticky;
-    top:0;
-  }
-  tr:nth-child(even){background:#f9f9f9;}
-  .loading{
-    text-align:center;
-    color:var(--muted);
-    padding:15px;
-  }
+:root{
+  --bg1:#1A2350;
+  --bg2:#1FA2FF;
+  --card:#F4F6F8;
+  --accent:#12D8FA;
+  --muted:#6B7280;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'League Spartan',sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:20px;
+}
+.portal-box{
+  width:100%;
+  max-width:1000px;
+  background:var(--card);
+  padding:32px;
+  border-radius:16px;
+  box-shadow:0 12px 36px rgba(0,0,0,.22);
+  text-align:center;
+}
+h1{color:var(--bg1);margin-bottom:20px}
+button.option{
+  width:180px;
+  margin:10px 8px;
+  padding:12px;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--bg2),var(--accent));
+  cursor:pointer;
+}
+button.option:hover{transform:translateY(-2px)}
+button.logout{
+  margin-top:20px;
+  background:#f87171;
+  padding:12px 20px;
+}
+.table-container{
+  margin-top:30px;
+  overflow-x:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
+}
+th,td{
+  border:1px solid #ddd;
+  padding:8px;
+}
+th{
+  background:var(--bg1);
+  color:#fff;
+  position:sticky;
+  top:0;
+}
+tr:nth-child(even){background:#f9f9f9}
+.loading{
+  text-align:center;
+  color:var(--muted);
+  padding:15px;
+}
 </style>
 </head>
+
 <body>
 
 <div class="portal-box">
   <h1>Admin Portal</h1>
+
   <div>
     <button class="option" onclick="loadSheet('kenderaan')">Kenderaan</button>
     <button class="option" onclick="loadSheet('alat_tulis')">Alat Tulis</button>
     <button class="option" onclick="loadSheet('projektor')">Projektor</button>
     <button class="option" onclick="loadSheet('kertas_a4')">Kertas A4</button>
   </div>
+
   <button class="logout" onclick="logout()">Log Keluar</button>
 
   <div id="tableContainer" class="table-container"></div>
@@ -104,9 +105,9 @@ const RESPONSE_API = {
   kertas_a4: "https://script.google.com/macros/s/AKfycbxDMYDYe0mmpZw0BzRQpMuNrYZkfhWP-0HJ049kH0vRKjXzHU6qDps7YJOzp--541uC/exec?sheet=kertas_a4"
 };
 
-// Redirect ke login kalau belum login
+// redirect kalau belum login
 if(sessionStorage.getItem('isLoggedIn') !== 'true'){
-  window.location.href='adminlogin.html';
+  window.location.href = 'adminlogin.html';
 }
 
 function loadSheet(type){
@@ -115,15 +116,22 @@ function loadSheet(type){
   container.innerHTML = `<div class="loading">Memuatkan data ${type}...</div>`;
 
   fetch(apiUrl)
-    .then(res=>res.json())
+    .then(res=>{
+      if(!res.ok) throw new Error("HTTP "+res.status);
+      return res.json();
+    })
     .then(data=>{
+      if(data.error){
+        container.innerHTML = `<div class="loading">API Error: ${data.error}</div>`;
+        return;
+      }
+
       if(!Array.isArray(data) || data.length===0){
-        container.innerHTML = `<div class="loading">Tiada data ditemui untuk ${type}.</div>`;
+        container.innerHTML = `<div class="loading">Tiada data ditemui.</div>`;
         return;
       }
 
       const headers = Object.keys(data[0]);
-
       let html = `<table><thead><tr>`;
       headers.forEach(h=>html+=`<th>${h}</th>`);
       html += `</tr></thead><tbody>`;
@@ -131,7 +139,7 @@ function loadSheet(type){
       data.forEach(row=>{
         html += `<tr>`;
         headers.forEach(h=>{
-          html += `<td>${row[h]!==undefined?row[h]:'-'}</td>`;
+          html += `<td>${row[h] ?? '-'}</td>`;
         });
         html += `</tr>`;
       });
@@ -140,14 +148,14 @@ function loadSheet(type){
       container.innerHTML = html;
     })
     .catch(err=>{
-      container.innerHTML = `<div class="loading">Ralat memuatkan data: ${err}</div>`;
+      container.innerHTML = `<div class="loading">Ralat API: ${err.message}</div>`;
       console.error(err);
     });
 }
 
 function logout(){
   sessionStorage.removeItem('isLoggedIn');
-  window.location.href='adminlogin.html';
+  window.location.href = 'adminlogin.html';
 }
 </script>
 
