@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Portal - Permohonan</title>
-
+<title>Admin Portal - Sistem Permohonan</title>
 <link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -16,43 +15,38 @@
   --accent:#12D8FA;
   --muted:#6B7280;
 }
-*{box-sizing:border-box;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'League Spartan',sans-serif;}
 body{
-  margin:0;
-  font-family:'League Spartan',sans-serif;
   background:linear-gradient(135deg,var(--bg1),var(--bg2));
   min-height:100vh;
   padding:20px;
 }
 .container{
   max-width:1200px;
-  margin:0 auto;
+  margin:auto;
 }
 .header{
-  background: var(--card);
+  background:var(--card);
   padding:30px;
   border-radius:20px;
   margin-bottom:30px;
   box-shadow:0 10px 30px rgba(0,0,0,0.2);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+  position:relative;
 }
-.header h1{
-  color:var(--bg1);
-  font-size:28px;
-}
-.refresh-btn{
-  padding:10px 20px;
-  background:var(--accent);
-  color:white;
+.header h1{color:var(--bg1);font-size:32px;margin-bottom:10px;}
+.header .subtitle{color:#4A4A4A;font-size:16px;}
+.header button.logout{
+  position:absolute;
+  top:30px;
+  right:30px;
+  background:#f87171;
+  color:#fff;
   border:none;
-  border-radius:8px;
+  padding:12px 20px;
+  border-radius:10px;
   cursor:pointer;
 }
-.refresh-btn:hover{
-  background:#12D8FA;
-}
+
 .tabs{
   display:flex;
   gap:10px;
@@ -62,24 +56,21 @@ body{
   flex:1;
   padding:15px;
   background:rgba(255,255,255,0.2);
+  border:2px solid transparent;
   border-radius:12px;
   color:white;
+  font-size:18px;
   font-weight:600;
-  text-align:center;
   cursor:pointer;
+  text-align:center;
   transition:all 0.3s ease;
 }
-.tab.active{
-  background:var(--card);
-  color:var(--bg1);
-  border:2px solid var(--accent);
-}
-.content-section{
-  display:none;
-}
-.content-section.active{
-  display:block;
-}
+.tab:hover{background:rgba(255,255,255,0.3);}
+.tab.active{background:var(--card);color:var(--bg1);border-color:var(--accent);}
+
+.content-section{display:none;}
+.content-section.active{display:block;}
+
 .qr-grid{
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
@@ -93,13 +84,8 @@ body{
   box-shadow:0 10px 30px rgba(0,0,0,0.2);
   text-align:center;
 }
-.qr-card h3{
-  color:var(--bg1);
-  font-size:20px;
-  font-weight:700;
-  margin-bottom:10px;
-}
-.qr-code-container{
+.qr-card h3{color:var(--bg1);margin-bottom:10px;}
+.qr-card .qr-code-container{
   background:white;
   padding:15px;
   border-radius:12px;
@@ -109,56 +95,42 @@ body{
 .download-btn{
   width:100%;
   padding:12px;
-  background: linear-gradient(135deg, #1FA2FF 0%, #12D8FA 100%);
+  background:linear-gradient(135deg,var(--bg2),var(--accent));
   color:white;
   border:none;
   border-radius:10px;
+  font-size:16px;
   font-weight:600;
   cursor:pointer;
+  transition:all 0.3s ease;
 }
-.download-btn:hover{
-  transform:translateY(-2px);
-  box-shadow:0 5px 15px rgba(31,162,255,0.3);
-}
-.table-container{
-  overflow-x:auto;
-  background:white;
-  border-radius:12px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-th,td{
-  padding:12px;
-  text-align:left;
-  border-bottom:1px solid #e0e0e0;
-}
-th{
-  background:var(--bg1);
-  color:white;
-  position:sticky;
-  top:0;
-}
+.download-btn:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(31,162,255,0.3);}
+
+.table-container{overflow-x:auto;background:var(--card);border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1);}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+th,td{padding:10px;border-bottom:1px solid #e0e0e0;text-align:left;}
+th{background:var(--bg1);color:white;position:sticky;top:0;}
 tr:hover{background:#f8f9fa;}
-.loading{
-  text-align:center;
-  padding:40px;
-  color:var(--muted);
-  font-size:16px;
-}
+
+.loading{text-align:center;color:var(--muted);padding:20px;}
+.error-message{background:#ffebee;color:#c62828;padding:15px;border-radius:10px;margin-bottom:20px;border-left:4px solid #c62828;text-align:center;}
+
+.filter-bar{display:flex;gap:15px;margin-bottom:15px;flex-wrap:wrap;}
+.filter-bar select{padding:10px 15px;border:1px solid #ccc;border-radius:8px;}
 @media(max-width:768px){
   .tabs{flex-direction:column;}
   .qr-grid{grid-template-columns:1fr;}
+  .filter-bar{flex-direction:column;}
 }
 </style>
 </head>
 <body>
+
 <div class="container">
   <div class="header">
-    <h1>Admin Portal - Permohonan</h1>
-    <button class="refresh-btn" onclick="logout()">Log Keluar</button>
+    <h1>Admin Portal Sistem Permohonan</h1>
+    <p class="subtitle">Dicipta oleh UPSI Holdings Sdn. Bhd.</p>
+    <button class="logout" onclick="logout()">Log Keluar</button>
   </div>
 
   <div class="tabs">
@@ -166,15 +138,28 @@ tr:hover{background:#f8f9fa;}
     <div class="tab" onclick="switchTab('permohonan')">Senarai Permohonan</div>
   </div>
 
-  <!-- QR Section -->
+  <!-- QR Code Section -->
   <div id="qrSection" class="content-section active">
     <div class="qr-grid" id="qrGrid">
-      <div style="grid-column:1/-1;text-align:center;color:white;padding:40px;">Memuatkan data sesi...</div>
+      <div style="grid-column:1/-1;text-align:center;color:white;padding:40px;">
+        Memuatkan QR Code...
+      </div>
     </div>
   </div>
 
   <!-- Permohonan Section -->
   <div id="permohonanSection" class="content-section">
+    <div class="filter-bar">
+      <label for="filterJenis">Tapis Jenis Permohonan:</label>
+      <select id="filterJenis" onchange="applyFilter()">
+        <option value="all">Semua</option>
+        <option value="Kenderaan">Kenderaan</option>
+        <option value="Alat Tulis">Alat Tulis</option>
+        <option value="Projektor">Projektor</option>
+        <option value="Kertas A4">Kertas A4</option>
+      </select>
+    </div>
+
     <div class="table-container">
       <table>
         <thead>
@@ -196,113 +181,99 @@ tr:hover{background:#f8f9fa;}
 </div>
 
 <script>
-if(sessionStorage.getItem('isLoggedIn')!=='true'){
+// Redirect jika belum login
+if(sessionStorage.getItem('isLoggedIn') !== 'true'){
   window.location.href='adminlogin.html';
 }
 
-const BASE_URL_QR = 'https://script.google.com/macros/s/AKfycbyLcDAFQTkRFcYqzN8H0P3JQKe_2KCM7_FKvWgZkYbnFg67Zc3e-UyItXBQHm-zPpNXKQ/exec';
+// Logout
+function logout(){sessionStorage.clear();window.location.href='adminlogin.html';}
 
-const SESSION_URLS = [
-  'https://script.google.com/macros/s/AKfycbwnujNL7Zvaryk71udEAIjHYYrHym-zXLgI8p-HB1TH4zFdmf_czTIcWazRj_vZ1vhrig/exec', // Kenderaan
-  'https://script.google.com/macros/s/AKfycbzteaAicSGci8gjiy6qZq8PslluWWRfZNOhu7dC_8gnrU8RHuseFglRKVfFygpzk1Eu/exec', // Alat Tulis
-  'https://script.google.com/macros/s/AKfycbywBA3URsRomdjq2lH_zLKn0PYivCOVn6AgFWINVPQfScYXUq2SlMoOvmi-WhfcRbjP/exec', // Projektor
-  'https://script.google.com/macros/s/AKfycbwoDHhFJuucCtB-Lt0VJLWQ7sq_U7UmXoRip_hD_WFqFT0Z6ml7vbuyFExw3f8ByTkZ/exec', // Kertas A4
-  BASE_URL_QR // QR Admin
-];
-
-const SESSIONS = ['Permohonan 1', 'Permohonan 2', 'Permohonan 3'];
-
+// Tab switch
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.content-section').forEach(s=>s.classList.remove('active'));
-  if(tab==='qr'){
-    document.querySelectorAll('.tab')[0].classList.add('active');
-    document.getElementById('qrSection').classList.add('active');
-    generateQRCodes();
-  }else{
-    document.querySelectorAll('.tab')[1].classList.add('active');
-    document.getElementById('permohonanSection').classList.add('active');
-    loadPermohonan();
-  }
+  if(tab==='qr'){document.querySelectorAll('.tab')[0].classList.add('active');document.getElementById('qrSection').classList.add('active');generateQRCodes();}
+  else{document.querySelectorAll('.tab')[1].classList.add('active');document.getElementById('permohonanSection').classList.add('active');loadPermohonan();}
 }
 
-function generateQRCodes(){
-  const grid = document.getElementById('qrGrid');
+// ==== QR Code Section ====
+const SESSION_URLS=[
+  'https://script.google.com/macros/s/AKfycbwAcZuDryEzXB8ZpaGY88DMCOv9LzO7jhA4MXqNcwT0H809DXlVSz2AroZ-veYAkju2/exec', // QR URL
+  'https://script.google.com/macros/s/AKfycbzteaAicSGci8gjiy6qZq8PslluWWRfZNOhu7dC_8gnrU8RHuseFglRKVfFygpzk1Eu/exec', // Alat Tulis
+  'https://script.google.com/macros/s/AKfycbwnujNL7Zvaryk71udEAIjHYYrHym-zXLgI8p-HB1TH4zFdmf_czTIcWazRj_vZ1vhrig/exec', // Kenderaan
+  'https://script.google.com/macros/s/AKfycbywBA3URsRomdjq2lH_zLKn0PYivCOVn6AgFWINVPQfScYXUq2SlMoOvmi-WhfcRbjP/exec', // Projektor
+  'https://script.google.com/macros/s/AKfycbwoDHhFJuucCtB-Lt0VJLWQ7sq_U7UmXoRip_hD_WFqFT0Z6ml7vbuyFExw3f8ByTkZ/exec'  // Kertas A4
+];
+
+async function generateQRCodes(){
+  const grid=document.getElementById('qrGrid');
   grid.innerHTML='';
-  SESSIONS.forEach((sess,index)=>{
+  SESSION_URLS.forEach((url,i)=>{
     const card=document.createElement('div');
     card.className='qr-card';
-    card.innerHTML=`
-      <h3>${sess}</h3>
-      <div class="qr-code-container" id="qr${index+1}"></div>
-      <button class="download-btn" onclick="downloadQR('qr${index+1}','QR_${sess.replace(' ','_')}')">Muat Turun QR Code</button>
-    `;
+    card.innerHTML=`<h3>QR ${i+1}</h3>
+      <div class="qr-code-container" id="qr${i}"></div>
+      <button class="download-btn" onclick="downloadQR('qr${i}','QR_${i+1}')">Muat Turun QR Code</button>`;
     grid.appendChild(card);
-    setTimeout(()=>{
-      new QRCode(document.getElementById(`qr${index+1}`),{
-        text: SESSION_URLS.join('\n'),
-        width:200,
-        height:200,
-        colorDark:"#1A2350",
-        colorLight:"#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    },100);
+    new QRCode(document.getElementById(`qr${i}`),{text:url,width:200,height:200,colorDark:"#1A2350",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.H});
   });
 }
 
-function downloadQR(elementId,filename){
-  const canvas=document.querySelector(`#${elementId} canvas`);
-  if(!canvas){alert('QR code belum siap.'); return;}
+function downloadQR(id,filename){
+  const canvas=document.querySelector(`#${id} canvas`);
+  if(!canvas){alert('QR belum siap');return;}
   const url=canvas.toDataURL('image/png');
   const link=document.createElement('a');
-  link.download=`${filename}.png`;
-  link.href=url;
-  link.click();
+  link.href=url;link.download=filename+'.png';link.click();
 }
+
+// ==== Permohonan Section ====
+let allPermohonanData=[];
 
 async function loadPermohonan(){
   const tbody=document.getElementById('permohonanTable');
   tbody.innerHTML='<tr><td colspan="6" class="loading">Memuatkan data...</td></tr>';
-
   try{
-    let allData=[];
-    // Fetch semua URL
-    for(const url of SESSION_URLS.slice(0,4)){ // hanya 4 permohonan, bukan QR admin
+    allPermohonanData=[];
+    // Fetch 4 permohonan URLs
+    for(const url of SESSION_URLS.slice(1)){ // skip first QR URL
       const res=await fetch(url);
       if(!res.ok) throw new Error(res.status);
       const data=await res.json();
-      if(Array.isArray(data)) allData=allData.concat(data);
+      if(Array.isArray(data)) allPermohonanData=allPermohonanData.concat(data);
     }
-
-    if(allData.length===0){
-      tbody.innerHTML='<tr><td colspan="6" class="loading">Tiada permohonan ditemui.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML=allData.map((r,i)=>{
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${r.JenisPermohonan||'-'}</td>
-        <td>${r.Nama||'-'}</td>
-        <td>${r.Jabatan||'-'}</td>
-        <td>${r.Kuantiti||'-'}</td>
-        <td>${r.Timestamp||'-'}</td>
-      </tr>`;
-    }).join('');
+    displayPermohonan(allPermohonanData);
   }catch(err){
     tbody.innerHTML=`<tr><td colspan="6" class="loading">Ralat memuatkan data: ${err.message}</td></tr>`;
     console.error(err);
   }
 }
 
-function logout(){
-  sessionStorage.clear();
-  window.location.href='adminlogin.html';
+function displayPermohonan(data){
+  const tbody=document.getElementById('permohonanTable');
+  if(data.length===0){tbody.innerHTML='<tr><td colspan="6" class="loading">Tiada permohonan ditemui.</td></tr>';return;}
+  tbody.innerHTML=data.map((r,i)=>{
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${r.JenisPermohonan||'-'}</td>
+      <td>${r.Nama||'-'}</td>
+      <td>${r.Jabatan||'-'}</td>
+      <td>${r.Kuantiti||'-'}</td>
+      <td>${r.Timestamp||'-'}</td>
+    </tr>`;
+  }).join('');
 }
 
-// Init
+function applyFilter(){
+  const filterValue=document.getElementById('filterJenis').value;
+  if(filterValue==='all'){displayPermohonan(allPermohonanData);}
+  else{displayPermohonan(allPermohonanData.filter(r=>r.JenisPermohonan===filterValue));}
+}
+
+// Initialize
 document.addEventListener('DOMContentLoaded',()=>{generateQRCodes();});
 </script>
+
 </body>
 </html>
