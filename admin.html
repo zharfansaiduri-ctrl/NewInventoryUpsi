@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal - Permohonan</title>
+
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root{
+  --bg1:#1A2350;
+  --bg2:#1FA2FF;
+  --card:#F4F6F8;
+  --accent:#12D8FA;
+  --muted:#6B7280;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'League Spartan',sans-serif;
+  background:linear-gradient(135deg,var(--bg1),var(--bg2));
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1200px;
+  margin:0 auto;
+}
+.header{
+  background: var(--card);
+  padding:30px;
+  border-radius:20px;
+  margin-bottom:30px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.header h1{
+  color:var(--bg1);
+  font-size:28px;
+}
+.refresh-btn{
+  padding:10px 20px;
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+.refresh-btn:hover{
+  background:#12D8FA;
+}
+.tabs{
+  display:flex;
+  gap:10px;
+  margin-bottom:30px;
+}
+.tab{
+  flex:1;
+  padding:15px;
+  background:rgba(255,255,255,0.2);
+  border-radius:12px;
+  color:white;
+  font-weight:600;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.3s ease;
+}
+.tab.active{
+  background:var(--card);
+  color:var(--bg1);
+  border:2px solid var(--accent);
+}
+.content-section{
+  display:none;
+}
+.content-section.active{
+  display:block;
+}
+.qr-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:20px;
+  margin-bottom:30px;
+}
+.qr-card{
+  background:var(--card);
+  padding:25px;
+  border-radius:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  text-align:center;
+}
+.qr-card h3{
+  color:var(--bg1);
+  font-size:20px;
+  font-weight:700;
+  margin-bottom:10px;
+}
+.qr-code-container{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin:15px 0;
+  display:inline-block;
+}
+.download-btn{
+  width:100%;
+  padding:12px;
+  background: linear-gradient(135deg, #1FA2FF 0%, #12D8FA 100%);
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+}
+.download-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 5px 15px rgba(31,162,255,0.3);
+}
+.table-container{
+  overflow-x:auto;
+  background:white;
+  border-radius:12px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th,td{
+  padding:12px;
+  text-align:left;
+  border-bottom:1px solid #e0e0e0;
+}
+th{
+  background:var(--bg1);
+  color:white;
+  position:sticky;
+  top:0;
+}
+tr:hover{background:#f8f9fa;}
+.loading{
+  text-align:center;
+  padding:40px;
+  color:var(--muted);
+  font-size:16px;
+}
+@media(max-width:768px){
+  .tabs{flex-direction:column;}
+  .qr-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Admin Portal - Permohonan</h1>
+    <button class="refresh-btn" onclick="logout()">Log Keluar</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('qr')">Jana QR Code</div>
+    <div class="tab" onclick="switchTab('permohonan')">Senarai Permohonan</div>
+  </div>
+
+  <!-- QR Section -->
+  <div id="qrSection" class="content-section active">
+    <div class="qr-grid" id="qrGrid">
+      <div style="grid-column:1/-1;text-align:center;color:white;padding:40px;">Memuatkan data sesi...</div>
+    </div>
+  </div>
+
+  <!-- Permohonan Section -->
+  <div id="permohonanSection" class="content-section">
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Jenis Permohonan</th>
+            <th>Nama</th>
+            <th>Jabatan</th>
+            <th>Kuantiti</th>
+            <th>Tarikh & Masa</th>
+          </tr>
+        </thead>
+        <tbody id="permohonanTable">
+          <tr><td colspan="6" class="loading">Memuatkan data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+if(sessionStorage.getItem('isLoggedIn')!=='true'){
+  window.location.href='adminlogin.html';
+}
+
+const BASE_URL_QR = 'https://script.google.com/macros/s/AKfycbyLcDAFQTkRFcYqzN8H0P3JQKe_2KCM7_FKvWgZkYbnFg67Zc3e-UyItXBQHm-zPpNXKQ/exec';
+
+const SESSION_URLS = [
+  'https://script.google.com/macros/s/AKfycbwnujNL7Zvaryk71udEAIjHYYrHym-zXLgI8p-HB1TH4zFdmf_czTIcWazRj_vZ1vhrig/exec', // Kenderaan
+  'https://script.google.com/macros/s/AKfycbzteaAicSGci8gjiy6qZq8PslluWWRfZNOhu7dC_8gnrU8RHuseFglRKVfFygpzk1Eu/exec', // Alat Tulis
+  'https://script.google.com/macros/s/AKfycbywBA3URsRomdjq2lH_zLKn0PYivCOVn6AgFWINVPQfScYXUq2SlMoOvmi-WhfcRbjP/exec', // Projektor
+  'https://script.google.com/macros/s/AKfycbwoDHhFJuucCtB-Lt0VJLWQ7sq_U7UmXoRip_hD_WFqFT0Z6ml7vbuyFExw3f8ByTkZ/exec', // Kertas A4
+  BASE_URL_QR // QR Admin
+];
+
+const SESSIONS = ['Permohonan 1', 'Permohonan 2', 'Permohonan 3'];
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.content-section').forEach(s=>s.classList.remove('active'));
+  if(tab==='qr'){
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('qrSection').classList.add('active');
+    generateQRCodes();
+  }else{
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('permohonanSection').classList.add('active');
+    loadPermohonan();
+  }
+}
+
+function generateQRCodes(){
+  const grid = document.getElementById('qrGrid');
+  grid.innerHTML='';
+  SESSIONS.forEach((sess,index)=>{
+    const card=document.createElement('div');
+    card.className='qr-card';
+    card.innerHTML=`
+      <h3>${sess}</h3>
+      <div class="qr-code-container" id="qr${index+1}"></div>
+      <button class="download-btn" onclick="downloadQR('qr${index+1}','QR_${sess.replace(' ','_')}')">Muat Turun QR Code</button>
+    `;
+    grid.appendChild(card);
+    setTimeout(()=>{
+      new QRCode(document.getElementById(`qr${index+1}`),{
+        text: SESSION_URLS.join('\n'),
+        width:200,
+        height:200,
+        colorDark:"#1A2350",
+        colorLight:"#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    },100);
+  });
+}
+
+function downloadQR(elementId,filename){
+  const canvas=document.querySelector(`#${elementId} canvas`);
+  if(!canvas){alert('QR code belum siap.'); return;}
+  const url=canvas.toDataURL('image/png');
+  const link=document.createElement('a');
+  link.download=`${filename}.png`;
+  link.href=url;
+  link.click();
+}
+
+async function loadPermohonan(){
+  const tbody=document.getElementById('permohonanTable');
+  tbody.innerHTML='<tr><td colspan="6" class="loading">Memuatkan data...</td></tr>';
+
+  try{
+    let allData=[];
+    // Fetch semua URL
+    for(const url of SESSION_URLS.slice(0,4)){ // hanya 4 permohonan, bukan QR admin
+      const res=await fetch(url);
+      if(!res.ok) throw new Error(res.status);
+      const data=await res.json();
+      if(Array.isArray(data)) allData=allData.concat(data);
+    }
+
+    if(allData.length===0){
+      tbody.innerHTML='<tr><td colspan="6" class="loading">Tiada permohonan ditemui.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML=allData.map((r,i)=>{
+      return `<tr>
+        <td>${i+1}</td>
+        <td>${r.JenisPermohonan||'-'}</td>
+        <td>${r.Nama||'-'}</td>
+        <td>${r.Jabatan||'-'}</td>
+        <td>${r.Kuantiti||'-'}</td>
+        <td>${r.Timestamp||'-'}</td>
+      </tr>`;
+    }).join('');
+  }catch(err){
+    tbody.innerHTML=`<tr><td colspan="6" class="loading">Ralat memuatkan data: ${err.message}</td></tr>`;
+    console.error(err);
+  }
+}
+
+function logout(){
+  sessionStorage.clear();
+  window.location.href='adminlogin.html';
+}
+
+// Init
+document.addEventListener('DOMContentLoaded',()=>{generateQRCodes();});
+</script>
+</body>
+</html>
