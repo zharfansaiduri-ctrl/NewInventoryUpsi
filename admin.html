@@ -51,6 +51,10 @@ button.logout{
   margin-top:20px;
   background:#f87171;
   padding:12px 20px;
+  border:none;
+  border-radius:10px;
+  color:#fff;
+  cursor:pointer;
 }
 .table-container{
   margin-top:30px;
@@ -98,13 +102,13 @@ tr:nth-child(even){background:#f9f9f9}
 </div>
 
 <script>
-// redirect kalau belum login
+// Redirect jika belum login
 if(sessionStorage.getItem('isLoggedIn') !== 'true'){
   window.location.href = 'adminlogin.html';
 }
 
 /**
- * Mapping NAMA ADMIN -> NAMA SHEET SEBENAR
+ * Mapping BUTANG -> NAMA SHEET SEBENAR
  */
 const SHEET_MAP = {
   kenderaan: 'Kenderaan',
@@ -114,13 +118,13 @@ const SHEET_MAP = {
 };
 
 /**
- * API ENDPOINT
+ * API ENDPOINT SETIAP SHEET
  */
 const RESPONSE_API = {
-  kenderaan: 'https://script.google.com/macros/s/AKfycbzqjdnJEFwtGoQ3quqShLmBG9CK5a3XBJUqU0ob3NmErTLdQ9v79Ox7slqw8qeDIvkJzA/exec',
-  alat_tulis: 'https://script.google.com/macros/s/AKfycbzJQy6rYAGlfwf0g-iUUfY0he-WoT7s4YcCdRNJZNfPpv6tTtB2wCGmrLiWBIzEUNd2/exec',
-  projektor: 'https://script.google.com/macros/s/AKfycbxJnqoEoP26AmwLyqXWKBfxfvOpF0zzAsQe91NcXzI3X_dBxWwjx1P3vMcZ4NbU_dkC/exec',
-  kertas_a4: 'https://script.google.com/macros/s/AKfycby8IyYh3afMYxYh0ral_p8mxgimGVMHvGf8WNhozgEp8xSnqKOkP8M0iCKRmJvpboi2/exec'
+  kenderaan: 'https://script.google.com/macros/s/AKfycbw8OVPzRQzV_b1_ijFVMU-blfBEgwR2EEKuKH458qr_PWXLJiCEscSLCCyG0RistoFxQQ/exec',
+  alat_tulis: 'https://script.google.com/macros/s/AKfycbyi5-tzR57BMb_uQxRq_ePTbcuFA0PAOEIAWQJsqwYI9-MA9uQEMbc06wHd60vixDnC/exec',
+  projektor: 'https://script.google.com/macros/s/AKfycbwjB4tE6RnNYVi68uNPaodMWefTGUewahWfB5lujtOMF3BU3R2jD3NaTXiymyFXymiY/exec',
+  kertas_a4: 'https://script.google.com/macros/s/AKfycbxAc6bJmxpdN1N55o0h31YLbKZVQMojziN23NxuE6TSws71gbGpm7rG9S1hH2cWXwY5/exec'
 };
 
 function loadSheet(type){
@@ -133,18 +137,19 @@ function loadSheet(type){
   }
 
   const apiUrl = `${apiBase}?sheet=${encodeURIComponent(sheetName)}`;
-
   const container = document.getElementById('tableContainer');
+
   container.innerHTML = `<div class="loading">Memuatkan data ${sheetName}...</div>`;
 
   fetch(apiUrl)
     .then(res=>{
-      if(!res.ok) throw new Error("HTTP "+res.status);
+      if(!res.ok) throw new Error("HTTP " + res.status);
       return res.json();
     })
     .then(data=>{
-      if(data.error){
-        container.innerHTML = `<div class="loading">API Error: ${data.error}</div>`;
+      // 🔴 ERROR HANDLING IKUT APPS SCRIPT
+      if(data.status === 'error'){
+        container.innerHTML = `<div class="loading">API Error: ${data.message}</div>`;
         return;
       }
 
@@ -153,10 +158,10 @@ function loadSheet(type){
         return;
       }
 
-      // generate table
+      // Generate table
       const headers = Object.keys(data[0]);
       let html = `<table><thead><tr>`;
-      headers.forEach(h=> html += `<th>${h}</th>`);
+      headers.forEach(h => html += `<th>${h}</th>`);
       html += `</tr></thead><tbody>`;
 
       data.forEach(row=>{
