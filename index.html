@@ -240,15 +240,9 @@ function updateFieldsByJenis(jenis){
   }
 }
 
-// --- QR auto-set jenis dari URL ---
-const params = new URLSearchParams(window.location.search);
-const jenisParam = params.get('jenis'); // alat_tulis / kenderaan / projektor / kertas_a4
-if(jenisParam){
-  jenisSelect.value = jenisParam;
-  updateFieldsByJenis(jenisParam);
-  jenisSelect.disabled = true; // lock dropdown
-  jenisLabel.textContent = "Jenis Aset: " + jenisParam.replace('_',' '); // tunjuk label
-}
+jenisSelect.addEventListener('change', function(){
+  updateFieldsByJenis(this.value);
+});
 
 // --- Form submit ---
 document.getElementById('assetForm').addEventListener('submit', async e=>{
@@ -293,6 +287,16 @@ function showMessage(msg,type){
 document.addEventListener('DOMContentLoaded', async ()=>{
   await loadNames();
   setupAutocomplete();
+  
+  // --- QR auto-set jenis dari URL ---
+  const params = new URLSearchParams(window.location.search);
+  const jenisParam = params.get('jenis'); // alat_tulis / kenderaan / projektor / kertas_a4
+  if(jenisParam){
+    jenisSelect.value = jenisParam;
+    updateFieldsByJenis(jenisParam);
+    jenisSelect.disabled = true; // lock dropdown
+    jenisLabel.textContent = "Jenis Aset: " + jenisParam.replace('_',' ').toUpperCase(); // tunjuk label lebih jelas
+  }
 });
 </script>
 
